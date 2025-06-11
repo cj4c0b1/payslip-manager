@@ -3,6 +3,8 @@ import base64
 import hashlib
 import hmac
 import streamlit as st
+from datetime import datetime, timedelta
+from typing import Optional, Dict, Any
 
 # Set page config must be the first Streamlit command
 st.set_page_config(
@@ -10,6 +12,16 @@ st.set_page_config(
     page_icon="💰",
     layout="centered"
 )
+
+# Add authentication check to the main app
+if 'authenticated' not in st.session_state:
+    st.session_state.authenticated = False
+    st.session_state.user = None
+
+# If not authenticated, redirect to login
+if not st.session_state.authenticated and 'Login' not in st.experimental_get_query_params().get('page', [''])[0]:
+    st.experimental_set_query_params(page='Login')
+    st.experimental_rerun()
 
 import pandas as pd
 import plotly.express as px
@@ -24,6 +36,15 @@ from typing import Optional, Tuple, Dict, Any
 from jose import jwt
 from jose.exceptions import JWTError
 from passlib.context import CryptContext
+
+# Import auth utilities
+from src.utils.auth_utils import (
+    is_authenticated,
+    is_admin,
+    get_current_user,
+    login_required,
+    admin_required
+)
 
 # Configure logging
 logging.basicConfig(
@@ -42,7 +63,7 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 # Get secrets from Streamlit's secrets
 SECRET_KEY = st.secrets.get("SECRET_KEY", "default-insecure-secret-key")
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
+ACCESS_TOKEN_EXPIRATION_MINUTES = 30
 
 # Security functions
 def verify_password(plain_password: str, hashed_password: str) -> bool:
@@ -1828,6 +1849,12 @@ def main_app():
 
 def main():
     """Main entry point with authentication check."""
+    # Initialize the database
+    init_database()
+    
+    # Create a manager instance
+    manager = PayslipManager()
+    
     # Initialize session state for authentication
     if 'authenticated' not in st.session_state:
         st.session_state.authenticated = False
@@ -1837,7 +1864,7 @@ def main():
         st.title("🔒 Payslip Manager")
         login_form()
     else:
-        main_app()
+        main_app(manager)
     
     # Sidebar info
     st.sidebar.info(
