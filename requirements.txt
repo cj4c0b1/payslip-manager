@@ -18,3 +18,6 @@ python-dateutil>=2.8.2
 
 # Development
 python-dotenv>=1.0.0
+
+# Excel
+xlsxwriter>=3.1.0
