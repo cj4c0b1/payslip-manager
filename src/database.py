@@ -7,7 +7,7 @@ from typing import Generator, Optional
 from sqlalchemy import (
     create_engine, Column, Integer, String, Float, Date, ForeignKey, 
     DateTime, func, event, DDL, Numeric, Boolean, Text, CheckConstraint, 
-    UniqueConstraint, Index
+    UniqueConstraint, Index, Enum
 )
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, sessionmaker, scoped_session, Session
@@ -208,11 +208,29 @@ class Employee(Base, TimestampMixin):
         nullable=True,
         comment='Timestamp until which the account is locked due to too many failed attempts'
     )
+    is_email_verified = Column(
+        Boolean,
+        default=False,
+        nullable=False,
+        comment='Whether the user has verified their email address',
+        index=True
+    )
+    email_verified_at = Column(
+        DateTime,
+        nullable=True,
+        comment='When the email was verified'
+    )
     
     # Relationships
     payslips = relationship(
         'Payslip',
         back_populates='employee',
+        cascade='all, delete-orphan',
+        passive_deletes=True
+    )
+    magic_links = relationship(
+        'MagicLink',
+        back_populates='user',
         cascade='all, delete-orphan',
         passive_deletes=True
     )
