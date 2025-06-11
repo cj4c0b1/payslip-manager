@@ -13,11 +13,21 @@ SQLAlchemy>=2.0.15
 # Data Visualization
 plotly>=5.15.0
 
+# Security
+python-jose[cryptography]>=3.3.0
+passlib[bcrypt]>=1.7.4
+python-dotenv>=1.0.0
+cryptography>=3.4.7
+pyjwt>=2.4.0
+
 # Date handling
 python-dateutil>=2.8.2
 
 # Development
-python-dotenv>=1.0.0
+black>=22.3.0
+mypy>=0.950
+pylint>=2.13.5
+pytest>=7.1.2
 
 # Excel
 xlsxwriter>=3.1.0

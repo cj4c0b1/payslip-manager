@@ -162,6 +162,12 @@ class Employee(Base, TimestampMixin):
         comment='Employee email address',
         nullable=False
     )
+    _password_hash = Column(
+        String(255),
+        name='password_hash',
+        comment='Hashed password for authentication',
+        nullable=True
+    )
     department = Column(
         String(100), 
         comment='Department name',
@@ -178,6 +184,29 @@ class Employee(Base, TimestampMixin):
         nullable=False,
         comment='Whether the employee is currently active',
         index=True
+    )
+    is_admin = Column(
+        Boolean,
+        default=False,
+        nullable=False,
+        comment='Whether the user has admin privileges',
+        index=True
+    )
+    last_login_at = Column(
+        DateTime,
+        nullable=True,
+        comment='Timestamp of last successful login'
+    )
+    failed_login_attempts = Column(
+        Integer,
+        default=0,
+        nullable=False,
+        comment='Number of consecutive failed login attempts'
+    )
+    account_locked_until = Column(
+        DateTime,
+        nullable=True,
+        comment='Timestamp until which the account is locked due to too many failed attempts'
     )
     
     # Relationships
@@ -198,9 +227,52 @@ class Employee(Base, TimestampMixin):
         Index('idx_employee_dept_active', 'department', 'is_active'),
     )
     
-    def __repr__(self) -> str:
-        return f'<Employee(id={self.id}, name=\'{self.name}\', employee_id=\'{self.employee_id}\')>'
-        return f"<Employee(id={self.id}, name='{self.name}', employee_id='{self.employee_id}')>"
+    def __repr__(self):
+        return f"<Employee(id={self.id}, name='{self.name}', email='{self.email}')>"
+        
+    @property
+    def password(self):
+        raise AttributeError('Password is not a readable attribute')
+    
+    @password.setter
+    def password(self, password):
+        """Set the password with hashing."""
+        from passlib.context import CryptContext
+        pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+        self._password_hash = pwd_context.hash(password)
+    
+    def verify_password(self, password: str) -> bool:
+        """Verify a password against the stored hash."""
+        if not self._password_hash:
+            return False
+            
+        from passlib.context import CryptContext
+        pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+        return pwd_context.verify(password, self._password_hash)
+    
+    def is_account_locked(self) -> bool:
+        """Check if the account is currently locked."""
+        if not self.account_locked_until:
+            return False
+        from datetime import datetime
+        return datetime.utcnow() < self.account_locked_until
+    
+    def record_failed_login_attempt(self, max_attempts: int = 5, lockout_minutes: int = 15) -> None:
+        """Record a failed login attempt and lock the account if needed."""
+        from datetime import datetime, timedelta
+        
+        self.failed_login_attempts += 1
+        
+        if self.failed_login_attempts >= max_attempts:
+            self.account_locked_until = datetime.utcnow() + timedelta(minutes=lockout_minutes)
+    
+    def record_successful_login(self) -> None:
+        """Record a successful login."""
+        from datetime import datetime
+        
+        self.last_login_at = datetime.utcnow()
+        self.failed_login_attempts = 0
+        self.account_locked_until = None
     
     @classmethod
     def get_by_employee_id(cls, session: Session, employee_id: str) -> Optional['Employee']:

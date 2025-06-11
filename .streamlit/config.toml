@@ -1,0 +1,27 @@
+[browser]
+serverAddress = ""
+
+[server]
+# Security settings
+# Enable CORS for security
+enableCORS = true
+# Enable XSS protection
+enableXsrfProtection = true
+# Enable websocket compression
+enableWebsocketCompression = true
+# Set maximum upload size to 50MB (adjust as needed)
+maxUploadSize = 50
+# Enable file watcher for development
+fileWatcherType = "auto"
+
+# Security headers (new format)
+# Prevent MIME type sniffing
+server.enableXsrfProtection = true
+server.enableWebsocketCompression = true
+server.enableCORS = true
+
+# Security headers (set via meta tags in the app)
+# These will be set in the app using st.markdown with unsafe_allow_html=True
+
+# Note: For production, ensure your web server (nginx/apache) is configured
+# with proper security headers as these are more reliable than meta tags
