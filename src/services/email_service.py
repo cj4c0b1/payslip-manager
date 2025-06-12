@@ -68,19 +68,33 @@ class EmailService:
             "default_sender_name": os.getenv("EMAIL_DEFAULT_SENDER_NAME", "Payslip Manager"),
             "use_tls": os.getenv("EMAIL_USE_TLS", "true").lower() == "true",
             "use_ssl": os.getenv("EMAIL_USE_SSL", "false").lower() == "true",
-            "debug": os.getenv("EMAIL_DEBUG", "false").lower() == "true"
+            "debug": os.getenv("EMAIL_DEBUG", "false").lower() == "true",
+            "from_email": os.getenv("FROM_EMAIL")
         }
         
         # Merge configs with environment variables taking precedence
         merged_config = {**config, **{k: v for k, v in env_config.items() if v is not None}}
         
+        # Set default_sender from from_email if not provided
+        if not merged_config.get("default_sender") and merged_config.get("from_email"):
+            sender_name = merged_config.get("default_sender_name", "Payslip Manager")
+            merged_config["default_sender"] = f"{sender_name} <{merged_config['from_email']}>"
+
         # Validate required settings
-        required = ["smtp_server", "smtp_port", "smtp_username", "smtp_password", "default_sender"]
+        required = ["smtp_server", "smtp_port", "smtp_username", "smtp_password"]
         missing = [key for key in required if not merged_config.get(key)]
-        
+
         if missing:
             raise EmailServiceError(f"Missing required email configuration: {', '.join(missing)}")
-        
+
+        # Ensure we have either default_sender or from_email
+        if not merged_config.get("default_sender") and not merged_config.get("from_email"):
+            raise EmailServiceError("Either 'default_sender' or 'from_email' must be configured")
+
+        # Set default_sender from from_email if still not set
+        if not merged_config.get("default_sender"):
+            merged_config["default_sender"] = merged_config["from_email"]
+
         return merged_config
     
     def _setup_templates(self):

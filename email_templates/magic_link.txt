@@ -1,0 +1,15 @@
+Your Magic Link for {{ app_name }}
+
+Hello,
+
+You've requested to sign in to {{ app_name }}. Use the link below to log in:
+
+{{ magic_link }}
+
+This link will expire in {{ expiration_minutes }} minutes and can only be used once.
+
+If you didn't request this email, you can safely ignore it.
+
+---
+This is an automated message, please do not reply to this email.
+© {{ current_year }} {{ app_name }}. All rights reserved.

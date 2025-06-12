@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block title %}Your Login Link{% endblock %}
+
+{% block header %}Sign in to {{ app_name }}{% endblock %}
+
+{% block content %}
+    <p>Hello,</p>
+    <p>You requested a login link for {{ app_name }}. Click the button below to sign in:</p>
+    
+    <p style="text-align: center;">
+        <a href="{{ login_url }}" class="button">Sign In</a>
+    </p>
+    
+    <p>Or copy and paste this link into your browser:</p>
+    <p style="word-break: break-all;">{{ login_url }}</p>
+    
+    <p>This link will expire in {{ expiration_minutes }} minutes and can only be used once.</p>
+    
+    <p>If you didn't request this email, you can safely ignore it.</p>
+    
+    <p>Best regards,<br>{{ app_name }} Team</p>
+{% endblock %}

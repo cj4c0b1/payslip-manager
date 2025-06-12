@@ -119,195 +119,15 @@ class TimestampMixin:
                        onupdate=datetime.utcnow, nullable=False,
                        comment='Timestamp when the record was last updated')
 
-# Create declarative base with our mixin
-Base = declarative_base()
+# Import Base from models.base to ensure all models use the same Base
+from src.models.base import Base
 
-# Set up event listeners for timestamps
-@event.listens_for(Base, 'before_insert')
-def set_created_at(mapper, connection, target):
-    """Set created_at and updated_at timestamps on insert."""
-    if hasattr(target, 'created_at'):
-        target.created_at = datetime.utcnow()
-    if hasattr(target, 'updated_at'):
-        target.updated_at = datetime.utcnow()
+# Import models to ensure they're registered with SQLAlchemy
+# These imports must come after Base is defined
+from src.models.employee import Employee
+from src.models.auth_models import MagicLink  # Import other models as needed
 
-@event.listens_for(Base, 'before_update')
-def set_updated_at(mapper, connection, target):
-    """Set updated_at timestamp on update."""
-    if hasattr(target, 'updated_at'):
-        target.updated_at = datetime.utcnow()
-
-class Employee(Base, TimestampMixin):
-    """Employee information model."""
-    __tablename__ = 'employees'
-    
-    id = Column(Integer, primary_key=True, index=True, comment='Primary key')
-    employee_id = Column(
-        String(50), 
-        unique=True, 
-        index=True, 
-        nullable=False, 
-        comment='Employee ID from the company system'
-    )
-    name = Column(
-        String(100), 
-        nullable=False, 
-        comment='Full name of the employee',
-        index=True
-    )
-    email = Column(
-        String(100), 
-        unique=True, 
-        index=True, 
-        comment='Employee email address',
-        nullable=False
-    )
-    _password_hash = Column(
-        String(255),
-        name='password_hash',
-        comment='Hashed password for authentication',
-        nullable=True
-    )
-    department = Column(
-        String(100), 
-        comment='Department name',
-        index=True
-    )
-    position = Column(
-        String(100), 
-        comment='Job position/title',
-        index=True
-    )
-    is_active = Column(
-        Boolean, 
-        default=True, 
-        nullable=False,
-        comment='Whether the employee is currently active',
-        index=True
-    )
-    is_admin = Column(
-        Boolean,
-        default=False,
-        nullable=False,
-        comment='Whether the user has admin privileges',
-        index=True
-    )
-    last_login_at = Column(
-        DateTime,
-        nullable=True,
-        comment='Timestamp of last successful login'
-    )
-    failed_login_attempts = Column(
-        Integer,
-        default=0,
-        nullable=False,
-        comment='Number of consecutive failed login attempts'
-    )
-    account_locked_until = Column(
-        DateTime,
-        nullable=True,
-        comment='Timestamp until which the account is locked due to too many failed attempts'
-    )
-    is_email_verified = Column(
-        Boolean,
-        default=False,
-        nullable=False,
-        comment='Whether the user has verified their email address',
-        index=True
-    )
-    email_verified_at = Column(
-        DateTime,
-        nullable=True,
-        comment='When the email was verified'
-    )
-    
-    # Relationships
-    payslips = relationship(
-        'Payslip',
-        back_populates='employee',
-        cascade='all, delete-orphan',
-        passive_deletes=True
-    )
-    magic_links = relationship(
-        'MagicLink',
-        back_populates='user',
-        cascade='all, delete-orphan',
-        passive_deletes=True
-    )
-    
-    __table_args__ = (
-        # Add a check constraint for email format
-        CheckConstraint(
-            "email LIKE '%_@__%.__%'",
-            name='valid_email_format'
-        ),
-        # Add a composite index for common query patterns
-        Index('idx_employee_dept_active', 'department', 'is_active'),
-    )
-    
-    def __repr__(self):
-        return f"<Employee(id={self.id}, name='{self.name}', email='{self.email}')>"
-        
-    @property
-    def password(self):
-        raise AttributeError('Password is not a readable attribute')
-    
-    @password.setter
-    def password(self, password):
-        """Set the password with hashing."""
-        from passlib.context import CryptContext
-        pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-        self._password_hash = pwd_context.hash(password)
-    
-    def verify_password(self, password: str) -> bool:
-        """Verify a password against the stored hash."""
-        if not self._password_hash:
-            return False
-            
-        from passlib.context import CryptContext
-        pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-        return pwd_context.verify(password, self._password_hash)
-    
-    def is_account_locked(self) -> bool:
-        """Check if the account is currently locked."""
-        if not self.account_locked_until:
-            return False
-        from datetime import datetime
-        return datetime.utcnow() < self.account_locked_until
-    
-    def record_failed_login_attempt(self, max_attempts: int = 5, lockout_minutes: int = 15) -> None:
-        """Record a failed login attempt and lock the account if needed."""
-        from datetime import datetime, timedelta
-        
-        self.failed_login_attempts += 1
-        
-        if self.failed_login_attempts >= max_attempts:
-            self.account_locked_until = datetime.utcnow() + timedelta(minutes=lockout_minutes)
-    
-    def record_successful_login(self) -> None:
-        """Record a successful login."""
-        from datetime import datetime
-        
-        self.last_login_at = datetime.utcnow()
-        self.failed_login_attempts = 0
-        self.account_locked_until = None
-    
-    @classmethod
-    def get_by_employee_id(cls, session: Session, employee_id: str) -> Optional['Employee']:
-        """Get an employee by their employee ID"""
-        return session.query(cls).filter(cls.employee_id == employee_id).first()
-    
-    @classmethod
-    def search(cls, session: Session, query: str, limit: int = 10) -> list['Employee']:
-        """Search employees by name or employee ID"""
-        search = f"%{query}%"
-        return session.query(cls).filter(
-            (cls.name.ilike(search)) | (cls.employee_id.ilike(search))
-        ).limit(limit).all()
-    
-    def get_latest_payslip(self) -> Optional['Payslip']:
-        """Get the most recent payslip for this employee"""
-        return self.payslips.order_by(Payslip.reference_month.desc()).first()
+# MagicLink model has been moved to src.models.auth_models
 
 class Payslip(Base, TimestampMixin):
     """Payslip information model."""
@@ -940,5 +760,6 @@ def get_session() -> Session:
     """
     return SessionFactory()
 
-# Create database tables if they don't exist
-init_db()
+# Only run init_db if this module is run directly
+if __name__ == "__main__":
+    init_db()

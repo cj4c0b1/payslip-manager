@@ -1,0 +1,11 @@
+# Security Policy and Contact Information
+
+# Our security policy
+Contact: security@example.com
+Encryption: https://example.com/pgp-key.txt
+Preferred-Languages: en
+Policy: https://example.com/security-policy
+Hiring: https://example.com/jobs
+
+# Security.txt is a standard that helps organizations define the process for security researchers to securely disclose security vulnerabilities.
+# For more information, see: https://securitytxt.org/

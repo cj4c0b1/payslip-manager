@@ -12,8 +12,8 @@ from typing import Optional, Tuple, Dict, Any
 from jose import jwt
 from jose.exceptions import JWTError
 
-from database import Session
-from models.auth_models import MagicLink
+from src.database import Session
+from src.models.auth_models import MagicLink
 from src.security import SecurityError, EncryptionManager
 
 # Initialize encryption manager

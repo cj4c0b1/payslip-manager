@@ -19,9 +19,9 @@ if 'authenticated' not in st.session_state:
     st.session_state.user = None
 
 # If not authenticated, redirect to login
-if not st.session_state.authenticated and 'Login' not in st.experimental_get_query_params().get('page', [''])[0]:
-    st.experimental_set_query_params(page='Login')
-    st.experimental_rerun()
+if not st.session_state.authenticated and 'Login' not in st.query_params.get('page', [''])[0]:
+    st.query_params['page'] = 'Login'
+    st.rerun()
 
 import pandas as pd
 import plotly.express as px

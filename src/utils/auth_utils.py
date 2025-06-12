@@ -21,9 +21,9 @@ def login_required(func: Callable) -> Callable:
         if not is_authenticated():
             st.warning("Please log in to access this page.")
             # Store the current page to redirect back after login
-            st.session_state["redirect_after_login"] = st.experimental_get_query_params()
+            st.session_state["redirect_after_login"] = dict(st.query_params)
             # Redirect to login page
-            st.experimental_rerun()
+            st.rerun()
             return
         return func(*args, **kwargs)
     return wrapper
@@ -38,8 +38,8 @@ def admin_required(func: Callable) -> Callable:
     def wrapper(*args, **kwargs):
         if not is_authenticated():
             st.warning("Please log in to access this page.")
-            st.session_state["redirect_after_login"] = st.experimental_get_query_params()
-            st.experimental_rerun()
+            st.session_state["redirect_after_login"] = dict(st.query_params)
+            st.rerun()
             return
             
         if not is_admin():
@@ -114,5 +114,5 @@ def get_auth_headers() -> dict:
 def handle_unauthorized():
     """Handle unauthorized access by redirecting to login."""
     st.error("You need to be logged in to access this page.")
-    st.session_state["redirect_after_login"] = st.experimental_get_query_params()
-    st.experimental_rerun()
+    st.session_state["redirect_after_login"] = dict(st.query_params)
+    st.rerun()

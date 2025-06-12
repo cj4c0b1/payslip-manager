@@ -26,7 +26,8 @@ logger = logging.getLogger(__name__)
 
 def main():
     """Initialize the database and create an admin user."""
-    from src.database import init_db, Session, Employee, get_session
+    from src.database import init_db, Session, get_session
+from src.models.employee import Employee
     from passlib.context import CryptContext
     
     # Initialize password hashing

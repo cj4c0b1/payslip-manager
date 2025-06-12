@@ -6,7 +6,8 @@ from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DateTime, I
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
-from database import Base
+# Import Base from the local base module to ensure consistent metadata
+from .base import Base
 
 class MagicLink(Base):
     """
@@ -49,7 +50,6 @@ class MagicLink(Base):
     )
     created_at = Column(
         DateTime(timezone=True),
-        server_default=func.now(),
         nullable=False,
         comment='When the link was created'
     )
@@ -83,10 +83,20 @@ class MagicLink(Base):
     def __init__(self, **kwargs):
         """
         Initialize a new MagicLink with default expiration.
+        
+        Args:
+            **kwargs: Additional arguments to pass to the base class
         """
+        # Set created_at if not provided
+        if 'created_at' not in kwargs:
+            kwargs['created_at'] = datetime.utcnow()
+        
+        # Set expires_at if not provided
+        if 'expires_at' not in kwargs and 'created_at' in kwargs:
+            kwargs['expires_at'] = kwargs['created_at'] + timedelta(minutes=self.TOKEN_EXPIRATION_MINUTES)
+        
+        # Initialize the SQLAlchemy model
         super().__init__(**kwargs)
-        if not self.expires_at:
-            self.expires_at = datetime.utcnow() + timedelta(minutes=self.TOKEN_EXPIRATION_MINUTES)
     
     @property
     def is_expired(self) -> bool:

@@ -9,7 +9,23 @@ A Streamlit-based application for managing and analyzing employee payslips in PD
 - **Dashboard**: View key metrics and visualizations
 - **Reports**: Generate detailed reports on earnings and deductions
 - **Export**: Export data in multiple formats (CSV, Excel, PDF)
-- **User Authentication**: Basic authentication for security
+- **Secure Authentication**: Passwordless magic link authentication
+- **Role-based Access Control**: Fine-grained permissions for different user roles
+- **Audit Logging**: Track all authentication events
+
+## Magic Link Authentication
+
+The application features a secure, passwordless authentication system using magic links. Users can log in by requesting a one-time-use link sent to their email address.
+
+### Key Security Features
+
+- **No Passwords**: Eliminates password-related security risks
+- **Single-Use Links**: Each link can only be used once
+- **Short Expiration**: Links expire after 15 minutes by default
+- **Device & Location Awareness**: Tracks device and location for security
+- **Rate Limiting**: Prevents abuse of the authentication system
+
+For detailed documentation, see [Magic Link Authentication](docs/magic_link_authentication.md).
 
 ## Installation
 
@@ -30,19 +46,52 @@ A Streamlit-based application for managing and analyzing employee payslips in PD
    pip install -r requirements.txt
    ```
 
+4. Set up environment variables:
+   Create a `.env` file in the project root with the following variables:
+   ```env
+   # Required for magic link authentication
+   SECRET_KEY=your-secret-key-here
+   BASE_URL=http://localhost:8501  # Update with your deployment URL
+   
+   # Email configuration (for sending magic links)
+   SMTP_SERVER=smtp.example.com
+   SMTP_PORT=587
+   SMTP_USERNAME=your-email@example.com
+   SMTP_PASSWORD=your-email-password
+   EMAIL_FROM=noreply@example.com
+   ```
+
 ## Usage
+
+### Authentication
+
+1. Access the application at `http://localhost:8501`
+2. Enter your email address and click "Send Magic Link"
+3. Check your email for a login link
+4. Click the link to be automatically logged in
+
+### Application Features
 
 1. Start the Streamlit application:
    ```bash
    streamlit run main.py
    ```
 
-2. Open your web browser and navigate to `http://localhost:8501`
-
-3. Use the sidebar to navigate between different sections:
+2. Once authenticated, use the sidebar to navigate between sections:
+   - **Dashboard**: View key metrics and visualizations
    - **Upload**: Upload and process new payslip PDFs
    - **View**: Browse and filter existing payslips
-   - **Reports**: View analytics and export data
+   - **Reports**: Generate and export detailed reports
+   - **Admin**: Manage users and settings (admin only)
+
+## Security
+
+- All authentication tokens are single-use and expire after 15 minutes
+- Sensitive operations require re-authentication
+- Failed login attempts are rate-limited
+- All communications are encrypted (HTTPS required in production)
+
+For detailed security information, see [Security Guidelines](docs/security.md)
 
 ## Project Structure
 

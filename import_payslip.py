@@ -4,9 +4,9 @@ import json
 from datetime import datetime
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
-from src.database import get_db_session, init_db
+from src.database import get_db_session, init_db, Payslip, Earning, Deduction
 from src.pdf_parser import process_military_payslip
-from src.database import Employee, Payslip, Earning, Deduction
+from src.models.employee import Employee
 
 def get_or_create_employee(session: Session, employee_data: dict) -> Employee:
     """Get or create an employee record based on CPF."""
