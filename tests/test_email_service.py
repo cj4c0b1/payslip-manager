@@ -64,54 +64,67 @@ def email_service():
                 service = EmailService(config=config)
                 yield service
 
-def test_send_magic_link_email(mock_smtp):
+@patch('src.services.email_service.email_service')
+def test_send_magic_link_email(mock_email_service, mock_smtp):
     """Test sending a magic link email."""
-    # Import the module-level function
-    from src.services.email_service import send_magic_link_email
-    
-    # Test data
+    # Setup test data
     test_email = "test@example.com"
     magic_link = "https://test-app.com/magic_link?token=test_token&email=test@example.com"
     
-    # Mock the SMTP server
-    mock_server = MagicMock()
-    mock_smtp.return_value = mock_server
+    # Configure the mock email service
+    mock_email_service.send_email.return_value = True
     
-    # Mock the email service instance
-    with patch('src.services.email_service.email_service') as mock_service:
-        # Configure the mock service
-        mock_service.config = TEST_CONFIG
-        mock_service.send_email.return_value = True
-        
-        # Send the test email
-        result = send_magic_link_email(
-            email=test_email,
-            magic_link=magic_link,
-            expiration_minutes=15,
-            app_name="Payslip Manager Test"
-        )
-        
-        # Verify the email was sent
-        assert result is True, "Email sending should return True on success"
-        mock_smtp.assert_called_once_with(TEST_CONFIG['smtp_server'], TEST_CONFIG['smtp_port'])
-        mock_server.starttls.assert_called_once()
-        mock_server.login.assert_called_once_with(
-            TEST_CONFIG['smtp_username'], 
-            TEST_CONFIG['smtp_password']
-        )
-        mock_server.send_message.assert_called_once()
-        mock_server.quit.assert_called_once()
-        
-        # Verify the service was called with the correct parameters
-        mock_service.send_email.assert_called_once()
+    # Import the function after setting up mocks
+    from src.services.email_service import send_magic_link_email
+    
+    # Call the function under test
+    result = send_magic_link_email(
+        email=test_email,
+        magic_link=magic_link,
+        expiration_minutes=15,
+        app_name="Payslip Manager Test"
+    )
+    
+    # Verify the result
+    assert result is True, "Email sending should return True on success"
+    
+    # Verify the email service was called with the correct parameters
+    mock_email_service.send_email.assert_called_once()
+    
+    # Get the call arguments
+    call_args, call_kwargs = mock_email_service.send_email.call_args
+    
+    # Verify the call arguments
+    assert call_kwargs['to_emails'] == test_email
+    assert call_kwargs['subject'] == "Your Payslip Manager Test Login Link"
+    assert call_kwargs['template_name'] == "magic_link"
+    
+    # Verify the template context
+    template_context = call_kwargs['template_context']
+    assert template_context['login_url'] == magic_link
+    assert template_context['app_name'] == "Payslip Manager Test"
+    assert template_context['expiration_minutes'] == 15
 
 def test_missing_required_config():
     """Test that missing required configuration raises an error."""
     from src.services.email_service import EmailService, EmailServiceError
     
-    # Test with missing required fields
+    # Test with empty config - should raise an error
     with pytest.raises(EmailServiceError) as excinfo:
-        EmailService(config={})
+        # Patch the environment to ensure no env vars are used
+        with patch.dict('os.environ', clear=True):
+            EmailService(config={})
+    assert "Missing required email configuration" in str(excinfo.value)
+    
+    # Test with partial config - should still raise an error
+    partial_config = {
+        "smtp_server": "smtp.example.com",
+        "smtp_port": 587,
+        # Missing smtp_username and smtp_password
+    }
+    with pytest.raises(EmailServiceError) as excinfo:
+        with patch.dict('os.environ', clear=True):
+            EmailService(config=partial_config)
     assert "Missing required email configuration" in str(excinfo.value)
     
     # Test with minimal required config
@@ -122,8 +135,9 @@ def test_missing_required_config():
         "smtp_password": "pass",
         "from_email": "test@example.com"
     }
-    service = EmailService(config=minimal_config)
-    assert service is not None
+    with patch.dict('os.environ', clear=True):
+        service = EmailService(config=minimal_config)
+        assert service is not None
 
 if __name__ == "__main__":
     # This allows running the test directly with python -m tests.test_email_service

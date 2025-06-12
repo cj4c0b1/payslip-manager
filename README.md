@@ -46,18 +46,32 @@ For detailed documentation, see [Magic Link Authentication](docs/magic_link_auth
    pip install -r requirements.txt
    ```
 
-4. Set up environment variables:
+4. **Email Configuration**
+
+The application uses SMTP to send emails for magic link authentication. You'll need to configure your email settings:
+
+   - For local development, you can use a service like [Mailtrap](https://mailtrap.io/) for testing
+   - For production, configure your SMTP server (e.g., Gmail, SendGrid, AWS SES)
+
+5. **Environment Variables**
    Create a `.env` file in the project root with the following variables:
    ```env
    # Required for magic link authentication
    SECRET_KEY=your-secret-key-here
-   BASE_URL=http://localhost:8501  # Update with your deployment URL
+   JWT_SECRET_KEY=your-jwt-secret-key-here
    
-   # Email configuration (for sending magic links)
+   # Email configuration (required for magic links)
    SMTP_SERVER=smtp.example.com
    SMTP_PORT=587
    SMTP_USERNAME=your-email@example.com
    SMTP_PASSWORD=your-email-password
+   FROM_EMAIL=noreply@example.com
+   TEST_EMAIL=test@example.com  # For testing email delivery
+   
+   # Optional email settings
+   # EMAIL_USE_TLS=true
+   # EMAIL_USE_SSL=false
+   # EMAIL_DEBUG=false
    EMAIL_FROM=noreply@example.com
    ```
 
