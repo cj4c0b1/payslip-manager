@@ -51,3 +51,5 @@ data/
 
 # Sensitive data
 sensitive_data/
+.streamlit/secrets.toml
+testdata/
