@@ -1,12 +1,29 @@
-import streamlit as st
 import os
+import base64
+import hashlib
+import hmac
+import streamlit as st
+
+# Set page config must be the first Streamlit command
+st.set_page_config(
+    page_title="Payslip Manager",
+    page_icon="💰",
+    layout="centered"
+)
+
 import pandas as pd
 import plotly.express as px
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from pathlib import Path
 import shutil
 from io import BytesIO
 import logging
+from typing import Optional, Tuple, Dict, Any
+
+# Security imports
+from jose import jwt
+from jose.exceptions import JWTError
+from passlib.context import CryptContext
 
 # Configure logging
 logging.basicConfig(
@@ -19,6 +36,147 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# Security configuration
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+# Get secrets from Streamlit's secrets
+SECRET_KEY = st.secrets.get("SECRET_KEY", "default-insecure-secret-key")
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 30
+
+# Security functions
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    """Verify a password against a hashed password."""
+    try:
+        return pwd_context.verify(plain_password, hashed_password)
+    except Exception as e:
+        logger.error(f"Password verification failed: {e}")
+        return False
+
+def get_password_hash(password: str) -> str:
+    """Hash a password."""
+    return pwd_context.hash(password)
+
+def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
+    """Create a JWT access token."""
+    to_encode = data.copy()
+    if expires_delta:
+        expire = datetime.utcnow() + expires_delta
+    else:
+        expire = datetime.utcnow() + timedelta(minutes=15)
+    to_encode.update({"exp": expire})
+    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+
+def authenticate_user(username: str, password: str) -> bool:
+    """Authenticate a user."""
+    try:
+        logger.debug(f"Attempting to authenticate user: {username}")
+        
+        # Get user from secrets (in production, use a database)
+        stored_username = st.secrets.get("authentication", {}).get("username")
+        stored_password = st.secrets.get("authentication", {}).get("password")
+        
+        if not stored_username or not stored_password:
+            logger.error("Authentication credentials not configured in secrets.toml")
+            return False
+            
+        logger.debug(f"Stored username: {stored_username}")
+        logger.debug(f"Stored password hash: {'*' * 10}{stored_password[-4:] if stored_password else 'None'}")
+        
+        if not hmac.compare_digest(username, stored_username):
+            logger.warning(f"Username mismatch: '{username}' != '{stored_username}'")
+            return False
+        
+        logger.debug("Username matches, verifying password...")
+        is_valid = verify_password(password, stored_password)
+        
+        if is_valid:
+            logger.info(f"User '{username}' authenticated successfully")
+        else:
+            logger.warning(f"Invalid password for user: {username}")
+            
+        return is_valid
+    except Exception as e:
+        logger.error(f"Authentication error for user '{username}': {str(e)}", exc_info=True)
+        return False
+
+def check_authentication() -> bool:
+    """Check if user is authenticated."""
+    if 'authenticated' not in st.session_state:
+        st.session_state.authenticated = False
+    return st.session_state.authenticated
+
+def login_form() -> bool:
+    """Display login form and handle authentication."""
+    logger.debug("Rendering login form")
+    
+    # Set page title and header
+    st.title("🔒 Payslip Manager Login")
+    st.markdown("Please enter your credentials to access the system.")
+    
+    # Create login form
+    with st.form("login_form", clear_on_submit=True):
+        st.subheader("Sign In")
+        
+        # Username and password fields
+        col1, col2 = st.columns([1, 1])
+        with col1:
+            username = st.text_input("Username", key="login_username", placeholder="Enter your username")
+        with col2:
+            password = st.text_input("Password", type="password", key="login_password", placeholder="Enter your password")
+        
+        # Login button
+        submitted = st.form_submit_button("Sign In", type="primary", use_container_width=True)
+        
+        # Handle form submission
+        if submitted:
+            if not username or not password:
+                st.error("Please enter both username and password")
+                logger.warning("Login attempt with empty username or password")
+                return False
+                
+            logger.info(f"Login attempt for user: {username}")
+            
+            if authenticate_user(username, password):
+                st.session_state.authenticated = True
+                st.session_state.username = username
+                logger.info(f"User {username} authenticated successfully")
+                st.rerun()
+            else:
+                st.error("❌ Invalid username or password")
+                logger.warning(f"Failed login attempt for user: {username}")
+                
+                # Show forgot password link (in a real app, this would trigger a password reset flow)
+                st.markdown("""
+                <div style='text-align: center; margin-top: 10px;'>
+                    <a href='#' style='font-size: 0.9em;'>Forgot your password?</a>
+                </div>
+                """, unsafe_allow_html=True)
+    
+    # Add some spacing and a divider
+    st.markdown("---")
+    
+    # Add a note about secure login
+    st.markdown("""
+    <div style='font-size: 0.9em; color: #666; text-align: center;'>
+        For security reasons, please log out when you're done.
+    </div>
+    """, unsafe_allow_html=True)
+    
+    return False
+
+def require_auth():
+    """Decorator to require authentication for a Streamlit page."""
+    def decorator(func):
+        def wrapper(*args, **kwargs):
+            if not check_authentication():
+                if login_form():
+                    return func(*args, **kwargs)
+                return
+            return func(*args, **kwargs)
+        return wrapper
+    return decorator
+
 # Import local modules
 from src.database import (
     init_db, get_session, get_db_session, get_db, Base, engine, Session,
@@ -26,14 +184,6 @@ from src.database import (
 )
 from src.pdf_parser import process_payslip, process_military_payslip, MilitaryPayslipParser
 from sqlalchemy import func
-
-# Page configuration must be the first Streamlit command
-st.set_page_config(
-    page_title="Payslip Manager",
-    page_icon="💰",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
 
 # Initialize database if not exists
 if not Path("data/payslips.db").exists():
@@ -191,37 +341,124 @@ class PayslipManager:
             logger.error(f"Error creating employee: {str(e)}", exc_info=True)
             raise
 
-    def save_uploaded_files(self, uploaded_files):
-        """Save uploaded files to the upload directory"""
+    def _is_safe_filename(self, filename: str) -> bool:
+        """Check if the filename is safe to use.
+        
+        Args:
+            filename: The filename to check
+            
+        Returns:
+            bool: True if the filename is safe, False otherwise
+        """
+        # Check for path traversal attempts
+        if '..' in filename or filename.startswith('/') or '~' in filename:
+            logger.warning(f"Rejected filename with path traversal attempt: {filename}")
+            return False
+            
+        # Check for allowed extensions (only PDF)
+        if not filename.lower().endswith('.pdf'):
+            logger.warning(f"Rejected file with invalid extension: {filename}")
+            return False
+            
+        # Check for suspicious characters
+        if any(c in filename for c in ['<', '>', ':', '"', '/', '\\', '|', '?', '*']):
+            logger.warning(f"Rejected filename with suspicious characters: {filename}")
+            return False
+            
+        # Check filename length
+        if len(filename) > 255:
+            logger.warning(f"Rejected filename that's too long: {filename}")
+            return False
+            
+        return True
+    
+    def _sanitize_filename(self, filename: str) -> str:
+        """Sanitize a filename to be safe for storage.
+        
+        Args:
+            filename: The original filename
+            
+        Returns:
+            str: A sanitized version of the filename
+        """
+        # Remove any path information
+        basename = os.path.basename(filename)
+        
+        # Replace or remove unsafe characters
+        safe_name = "".join(c if c.isalnum() or c in ' ._-' else '_' for c in basename)
+        
+        # Add timestamp to prevent overwrites and add some randomness
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        random_suffix = hashlib.md5(os.urandom(8)).hexdigest()[:8]
+        name, ext = os.path.splitext(safe_name)
+        return f"{name}_{timestamp}_{random_suffix}{ext}"
+    
+    def save_uploaded_files(self, uploaded_files) -> list:
+        """Securely save uploaded files to the upload directory.
+        
+        Args:
+            uploaded_files: List of uploaded file objects from Streamlit
+            
+        Returns:
+            list: List of paths to the saved files
+            
+        Raises:
+            ValueError: If a file is not safe to save
+        """
         saved_files = []
+        
+        # Ensure upload directory exists with secure permissions (0o700 = owner-only rwx)
+        self.upload_dir.mkdir(mode=0o700, exist_ok=True, parents=True)
+        
         for uploaded_file in uploaded_files:
-            if not uploaded_file.name.lower().endswith('.pdf'):
-                st.warning(f"Skipping non-PDF file: {uploaded_file.name}")
+            original_name = uploaded_file.name
+            
+            # Validate the filename
+            if not self._is_safe_filename(original_name):
+                logger.warning(f"Rejected potentially unsafe filename: {original_name}")
+                st.warning(f"Skipping file with invalid name: {original_name}")
                 continue
-                
-            # Create a safe filename
-            safe_name = "".join(c if c.isalnum() or c in ' ._-' else '_' for c in uploaded_file.name)
+            
+            # Sanitize the filename
+            safe_name = self._sanitize_filename(original_name)
             file_path = self.upload_dir / safe_name
             
-            # Handle duplicate filenames
-            counter = 1
-            while file_path.exists():
-                name_parts = safe_name.rsplit('.', 1)
-                if len(name_parts) > 1:
-                    new_name = f"{name_parts[0]}_{counter}.{name_parts[1]}"
-                else:
-                    new_name = f"{safe_name}_{counter}"
-                file_path = self.upload_dir / new_name
-                counter += 1
-            
-            # Save the file
             try:
+                # Read the file content first to check size
+                file_content = uploaded_file.getvalue()
+                
+                # Check file size (max 10MB)
+                max_size = 10 * 1024 * 1024  # 10MB
+                if len(file_content) > max_size:
+                    raise ValueError(f"File {original_name} exceeds maximum size of 10MB")
+                
+                # Check if the content looks like a PDF (first 4 bytes should be '%PDF')
+                if len(file_content) > 4 and not file_content.startswith(b'%PDF'):
+                    raise ValueError(f"File {original_name} does not appear to be a valid PDF")
+                
+                # Write the file with secure permissions (0o600 = owner-only rw-)
                 with open(file_path, "wb") as f:
-                    f.write(uploaded_file.getbuffer())
+                    f.write(file_content)
+                
+                # Set secure file permissions
+                os.chmod(file_path, 0o600)
+                
+                # Verify the file was written and is not empty
+                if not file_path.is_file() or file_path.stat().st_size == 0:
+                    raise IOError(f"Failed to save file: {safe_name}")
+                
                 saved_files.append(str(file_path))
+                logger.info(f"Saved uploaded file: {file_path}")
+                
             except Exception as e:
-                st.error(f"❌ Error saving file {uploaded_file.name}: {str(e)}")
-                continue
+                # Clean up partially written files on error
+                if file_path.exists():
+                    try:
+                        file_path.unlink()
+                    except Exception as cleanup_error:
+                        logger.error(f"Failed to clean up file after error: {cleanup_error}")
+                logger.error(f"Error saving file {original_name}: {e}")
+                st.error(f"❌ Error saving file {original_name}: {str(e)}")
                 
         return saved_files
 
@@ -910,7 +1147,7 @@ def show_upload_page(manager):
         
         with col1:
             if st.button("🔄 Refresh Database Stats"):
-                st.experimental_rerun()
+                st.rerun()
         
         with col2:
             if st.button("🧹 Clear All Data", type="secondary"):
@@ -936,7 +1173,7 @@ def show_upload_page(manager):
                                     
                                     st.success("✅ Database has been reset successfully")
                                     st.session_state.show_reset_confirm = False
-                                    st.experimental_rerun()
+                                    st.rerun()
                             except Exception as e:
                                 st.error(f"❌ Error resetting database: {str(e)}")
                                 st.exception(e)
@@ -1518,7 +1755,8 @@ def reset_database():
             print("Restored database from backup")
         return False
 
-def main():
+def main_app():
+    """Main application layout and routing."""
     # Check if we need to reset the database
     if Path("data/payslips.db").exists():
         with get_db_session() as session:
@@ -1536,12 +1774,21 @@ def main():
                 else:
                     raise
     
-    # Custom CSS for better styling
+    # Security-focused styles and custom CSS
     st.markdown("""
     <style>
-        .main .block-container {
-            padding-top: 2rem;
-            padding-bottom: 2rem;
+        /* Security-focused styles */
+        html {
+            scroll-behavior: smooth;
+            -webkit-text-size-adjust: 100%;
+            -ms-text-size-adjust: 100%;
+        }
+        
+        /* Custom styles */
+        .stApp {
+            max-width: 1200px;
+            margin: 0 auto;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         }
         .stButton>button {
             width: 100%;
@@ -1551,45 +1798,55 @@ def main():
         }
         .stAlert {
             padding: 1em;
-            border-radius: 0.5em;
         }
     </style>
     """, unsafe_allow_html=True)
     
-    st.title("💰 Payslip Management System")
+    # Add logout button to sidebar
+    if st.sidebar.button("Logout"):
+        st.session_state.authenticated = False
+        st.rerun()
     
-    # Initialize database button in sidebar
-    st.sidebar.title("Configuration")
-    if st.sidebar.button("🔄 Initialize Database"):
-        with st.spinner("Initializing database..."):
-            init_database()
-    
-    # Navigation
+    # Sidebar navigation
     st.sidebar.title("Navigation")
-    page = st.sidebar.radio("Go to", ["Upload", "View", "Reports"])
+    page = st.sidebar.radio(
+        "Go to",
+        ["Upload", "View", "Reports"],
+        index=0,
+        format_func=lambda x: {"Upload": "📤 Upload", "View": "👀 View", "Reports": "📊 Reports"}[x]
+    )
     
-    # Display the selected page
-    try:
-        manager = PayslipManager()
-        
-        if page == "Upload":
-            show_upload_page(manager)
-        elif page == "View":
-            show_view_page(manager)
-        elif page == "Reports":
-            show_reports_page(manager)
-            
-    except Exception as e:
-        st.error(f"❌ An error occurred: {str(e)}")
-        import traceback
-        st.error(f"Error details: {traceback.format_exc()}")
+    # Main app logic
+    manager = PayslipManager()
     
-    # Footer
-    st.sidebar.markdown("---")
+    if page == "Upload":
+        show_upload_page(manager)
+    elif page == "View":
+        show_view_page(manager)
+    elif page == "Reports":
+        show_reports_page(manager)
+
+def main():
+    """Main entry point with authentication check."""
+    # Initialize session state for authentication
+    if 'authenticated' not in st.session_state:
+        st.session_state.authenticated = False
+    
+    # Show login form if not authenticated
+    if not st.session_state.authenticated:
+        st.title("🔒 Payslip Manager")
+        login_form()
+    else:
+        main_app()
+    
+    # Sidebar info
     st.sidebar.info(
         "ℹ️ **Payslip Management System**\n\n"
         "Upload, view, and analyze your payslips in one place."
     )
+    
+    # Add version info to sidebar
+    st.sidebar.caption(f"v1.0.0 | {datetime.now().year}")
 
 if __name__ == "__main__":
     main()
