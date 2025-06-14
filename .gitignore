@@ -1,8 +1,13 @@
-# Python
+# Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
 *$py.class
+
+# C extensions
 *.so
+*.pyd
+
+# Distribution / packaging
 .Python
 build/
 develop-eggs/
@@ -19,23 +24,40 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+MANIFEST
 
 # Virtual Environment
 venv/
+.venv/
 ENV/
 
 # Environment variables
 .env
+*.env.local
+.env.*.local
+!.env.example
 
 # Database
 *.db
 *.sqlite3
+*.db-journal
+*.sqlite3-journal
+*.sql
 
 # IDE specific files
 .idea/
 .vscode/
 *.swp
 *.swo
+*~
+.DS_Store
+
+# Local development
+.cache/
+.coverage
+htmlcov/
+.pytest_cache/
+.mypy_cache/
 
 # Logs
 *.log
@@ -50,3 +72,4 @@ data/
 
 # Sensitive data
 sensitive_data/
+.streamlit/secrets.toml
