@@ -112,46 +112,99 @@ def login_form() -> bool:
     
     # Set page title and header
     st.title("🔒 Payslip Manager Login")
-    st.markdown("Please enter your credentials to access the system.")
+    st.markdown("Please sign in with your credentials or request a magic link.")
     
-    # Create login form
-    with st.form("login_form", clear_on_submit=True):
-        st.subheader("Sign In")
-        
-        # Username and password fields
-        col1, col2 = st.columns([1, 1])
-        with col1:
-            username = st.text_input("Username", key="login_username", placeholder="Enter your username")
-        with col2:
-            password = st.text_input("Password", type="password", key="login_password", placeholder="Enter your password")
-        
-        # Login button
-        submitted = st.form_submit_button("Sign In", type="primary", use_container_width=True)
-        
-        # Handle form submission
-        if submitted:
-            if not username or not password:
-                st.error("Please enter both username and password")
-                logger.warning("Login attempt with empty username or password")
-                return False
-                
-            logger.info(f"Login attempt for user: {username}")
+    # Create tabs for different login methods
+    tab1, tab2 = st.tabs(["Sign In with Password", "Sign In with Magic Link"])
+    
+    with tab1:
+        with st.form("password_login_form", clear_on_submit=True):
+            st.subheader("Sign In with Password")
             
-            if authenticate_user(username, password):
-                st.session_state.authenticated = True
-                st.session_state.username = username
-                logger.info(f"User {username} authenticated successfully")
-                st.rerun()
-            else:
-                st.error("❌ Invalid username or password")
-                logger.warning(f"Failed login attempt for user: {username}")
+            # Username and password fields
+            col1, col2 = st.columns([1, 1])
+            with col1:
+                username = st.text_input("Username", key="login_username", placeholder="Enter your username")
+            with col2:
+                password = st.text_input("Password", type="password", key="login_password", placeholder="Enter your password")
+            
+            # Login button
+            submitted = st.form_submit_button("Sign In", type="primary", use_container_width=True)
+            
+            # Handle form submission
+            if submitted:
+                if not username or not password:
+                    st.error("Please enter both username and password")
+                    logger.warning("Login attempt with empty username or password")
+                    return False
+                    
+                logger.info(f"Password login attempt for user: {username}")
                 
-                # Show forgot password link (in a real app, this would trigger a password reset flow)
-                st.markdown("""
-                <div style='text-align: center; margin-top: 10px;'>
-                    <a href='#' style='font-size: 0.9em;'>Forgot your password?</a>
-                </div>
-                """, unsafe_allow_html=True)
+                if authenticate_user(username, password):
+                    st.session_state.authenticated = True
+                    st.session_state.username = username
+                    logger.info(f"User {username} authenticated successfully")
+                    st.rerun()
+                else:
+                    st.error("❌ Invalid username or password")
+                    logger.warning(f"Failed password login attempt for user: {username}")
+    
+    with tab2:
+        with st.form("magic_link_form", clear_on_submit=True):
+            st.subheader("Sign In with Magic Link")
+            st.info("Enter your email address and we'll send you a secure login link.")
+            
+            email = st.text_input("Email Address", key="magic_link_email", 
+                                placeholder="your.email@example.com")
+            
+            submitted = st.form_submit_button("Send Magic Link", type="secondary", use_container_width=True)
+            
+            if submitted:
+                if not email:
+                    st.error("Please enter your email address")
+                    return False
+                    
+                logger.info(f"Magic link requested for email: {email}")
+                
+                try:
+                    # Import the auth service context manager
+                    from src.auth.service import auth_service_scope
+                    from fastapi import Request
+                    
+                    # Get user agent and IP address
+                    user_agent = st.query_params.get("user_agent", [""])[0]
+                    ip_address = st.query_params.get("ip", [""])[0]
+                    
+                    # Use the auth service within a context manager for proper session handling
+                    with auth_service_scope() as auth_service:
+                        # Send magic link
+                        email_sent = auth_service.send_magic_link(
+                            email=email,
+                            user_agent=user_agent,
+                            ip_address=ip_address
+                        )
+                    
+                    if email_sent:
+                        st.success("✅ A magic link has been sent to your email!")
+                        st.info("Please check your inbox and click the link to sign in.")
+                        logger.info(f"Magic link sent to {email}")
+                    else:
+                        st.error("❌ Failed to send magic link. Please try again later.")
+                        logger.error(f"Failed to send magic link to {email}")
+                        
+                except Exception as e:
+                    st.error(f"❌ An error occurred: {str(e)}")
+                    logger.error(f"Error sending magic link to {email}: {str(e)}", exc_info=True)
+    
+    # Add some spacing and a divider
+    st.markdown("---")
+    
+    # Add a note about secure login
+    st.markdown("""
+    <div style='font-size: 0.9em; color: #666; text-align: center;'>
+        For security reasons, please log out when you're done.
+    </div>
+    """, unsafe_allow_html=True)
     
     # Add some spacing and a divider
     st.markdown("---")
@@ -179,9 +232,12 @@ def require_auth():
 
 # Import local modules
 from src.database import (
-    init_db, get_session, get_db_session, get_db, Base, engine, Session,
-    Employee, Payslip, Earning, Deduction
+    init_db, get_session, get_db_session, get_db, Base, engine, Session
 )
+from src.models.employee import Employee
+from src.models.payslip import Payslip
+from src.models.earning import Earning
+from src.models.deduction import Deduction
 from src.pdf_parser import process_payslip, process_military_payslip, MilitaryPayslipParser
 from sqlalchemy import func
 
@@ -1719,7 +1775,17 @@ def show_reports_page(manager):
 def init_database():
     """Initialize the database and create tables"""
     try:
-        from src.database import Base, engine
+        # Import models to ensure they're registered with SQLAlchemy
+        from src.models import Base
+        from src.database import engine
+        
+        # Import all models to ensure they're registered
+        from src.models.employee import Employee  # noqa: F401
+        from src.models.payslip import Payslip  # noqa: F401
+        from src.models.earning import Earning  # noqa: F401
+        from src.models.deduction import Deduction  # noqa: F401
+        
+        # Create all tables
         Base.metadata.create_all(engine)
         st.sidebar.success("✅ Database initialized successfully!")
     except Exception as e:
@@ -1741,14 +1807,29 @@ def reset_database():
         print(f"Created backup at {backup_path}")
     
     try:
+        # Import models to ensure they're registered with SQLAlchemy
+        from src.models import Base
+        from src.database import engine
+        
+        # Import all models to ensure they're registered
+        from src.models.employee import Employee  # noqa: F401
+        from src.models.payslip import Payslip  # noqa: F401
+        from src.models.earning import Earning  # noqa: F401
+        from src.models.deduction import Deduction  # noqa: F401
+        
         # Drop and recreate all tables
-        from src.database import Base, engine
+        print("Dropping existing tables...")
         Base.metadata.drop_all(engine)
+        
+        print("Creating new tables...")
         Base.metadata.create_all(engine)
-        print("Database reset successfully!")
+        
+        print("✅ Database reset successfully!")
         return True
     except Exception as e:
-        print(f"Error resetting database: {e}")
+        print(f"❌ Error resetting database: {e}")
+        import traceback
+        traceback.print_exc()
         # Restore from backup if possible
         if backup_path.exists():
             shutil.copy2(backup_path, db_path)
@@ -1826,11 +1907,40 @@ def main_app():
     elif page == "Reports":
         show_reports_page(manager)
 
+def verify_magic_link(token: str) -> bool:
+    """Verify a magic link token and log the user in if valid."""
+    try:
+        from src.auth.service import auth_service_scope
+        
+        with auth_service_scope() as auth_service:
+            is_valid, user_data = auth_service.verify_token(token)
+            
+            if is_valid and user_data:
+                st.session_state.authenticated = True
+                st.session_state.username = user_data.get('email', 'user')
+                st.success("✅ Successfully logged in with magic link!")
+                st.rerun()
+                return True
+            else:
+                st.error("❌ Invalid or expired magic link. Please request a new one.")
+                return False
+                
+    except Exception as e:
+        logger.error(f"Error verifying magic link: {str(e)}", exc_info=True)
+        st.error(f"❌ An error occurred while verifying the magic link: {str(e)}")
+        return False
+
 def main():
     """Main entry point with authentication check."""
     # Initialize session state for authentication
     if 'authenticated' not in st.session_state:
         st.session_state.authenticated = False
+    
+    # Check for magic link token in URL
+    token = st.query_params.get("token")
+    if token and not st.session_state.authenticated:
+        verify_magic_link(token)
+        return  # Wait for rerun
     
     # Show login form if not authenticated
     if not st.session_state.authenticated:

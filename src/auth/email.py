@@ -23,20 +23,38 @@ class EmailConfig:
     def __init__(self):
         load_dotenv()  # Load environment variables from .env file if it exists
         
-        # SMTP Configuration
-        self.smtp_server = os.getenv("SMTP_SERVER", "smtp.gmail.com")
-        self.smtp_port = int(os.getenv("SMTP_PORT", 587))
-        self.smtp_username = os.getenv("SMTP_USERNAME")
-        self.smtp_password = os.getenv("SMTP_PASSWORD")
-        self.use_tls = os.getenv("SMTP_USE_TLS", "true").lower() == "true"
+        # Try to import streamlit for secrets
+        try:
+            import streamlit as st
+            use_streamlit_secrets = True
+        except ImportError:
+            use_streamlit_secrets = False
+        
+        def get_setting(env_var, default=None, secret_key=None, secret_section=None):
+            """Get setting from Streamlit secrets or environment variables."""
+            if use_streamlit_secrets and secret_key:
+                try:
+                    if secret_section:
+                        return st.secrets.get(secret_section, {}).get(secret_key) or os.getenv(env_var, default)
+                    return st.secrets.get(secret_key) or os.getenv(env_var, default)
+                except Exception as e:
+                    logger.warning(f"Error accessing Streamlit secret {secret_key}: {str(e)}")
+            return os.getenv(env_var, default)
+        
+        # SMTP Configuration - try to get from Streamlit secrets first, then environment variables
+        self.smtp_server = get_setting("SMTP_SERVER", "smtp.gmail.com", "smtp_server", "email")
+        self.smtp_port = int(get_setting("SMTP_PORT", "587", "smtp_port", "email"))
+        self.smtp_username = get_setting("SMTP_USERNAME", None, "smtp_username", "email")
+        self.smtp_password = get_setting("SMTP_PASSWORD", None, "smtp_password", "email")
+        self.use_tls = get_setting("SMTP_USE_TLS", "true", "use_tls", "email").lower() == "true"
         
         # Email settings
-        self.sender_email = os.getenv("EMAIL_SENDER", self.smtp_username)
-        self.app_name = os.getenv("APP_NAME", "Payslip Manager")
-        self.base_url = os.getenv("BASE_URL", "http://localhost:8501")
+        self.sender_email = get_setting("EMAIL_SENDER", self.smtp_username, "from_email", "email")
+        self.app_name = get_setting("APP_NAME", "Payslip Manager", "app_name", "email")
+        self.base_url = get_setting("BASE_URL", "http://localhost:8501", "base_url", "email")
         
         # Token settings
-        self.token_expiry_hours = int(os.getenv("TOKEN_EXPIRY_HOURS", 1))
+        self.token_expiry_hours = int(get_setting("TOKEN_EXPIRY_HOURS", "1", "token_expiry_hours", "auth"))
 
 
 class EmailService:
@@ -44,6 +62,15 @@ class EmailService:
     
     def __init__(self, config: Optional[EmailConfig] = None):
         self.config = config or EmailConfig()
+        
+        # Log configuration for debugging
+        logger.info("EmailService initialized with config:")
+        logger.info(f"- SMTP Server: {self.config.smtp_server}:{self.config.smtp_port}")
+        logger.info(f"- SMTP Username: {self.config.smtp_username}")
+        logger.info(f"- SMTP Use TLS: {self.config.use_tls}")
+        logger.info(f"- Sender Email: {self.config.sender_email}")
+        logger.info(f"- App Name: {self.config.app_name}")
+        logger.info(f"- Base URL: {self.config.base_url}")
     
     def _send_email(self, to_email: str, subject: str, html_content: str) -> bool:
         """
@@ -57,8 +84,17 @@ class EmailService:
         Returns:
             bool: True if email was sent successfully, False otherwise
         """
+        # Validate configuration
         if not all([self.config.smtp_server, self.config.smtp_username, self.config.smtp_password]):
-            logger.error("SMTP configuration is incomplete. Email not sent.")
+            missing = []
+            if not self.config.smtp_server:
+                missing.append("SMTP_SERVER")
+            if not self.config.smtp_username:
+                missing.append("SMTP_USERNAME")
+            if not self.config.smtp_password:
+                missing.append("SMTP_PASSWORD")
+                
+            logger.error(f"SMTP configuration is incomplete. Missing: {', '.join(missing)}")
             return False
         
         # Create message
@@ -70,22 +106,49 @@ class EmailService:
         # Add HTML content
         msg.attach(MIMEText(html_content, "html"))
         
+        # Log email details (without sensitive data)
+        logger.info(f"Sending email to {to_email} with subject: {subject}")
+        logger.debug(f"Email content: {html_content[:200]}...")  # Log first 200 chars of content
+        
         try:
+            # Enable SMTP debug output
+            debug_level = 1 if logger.getEffectiveLevel() <= logging.DEBUG else 0
+            
             # Create secure connection with server and send email
             context = ssl.create_default_context()
+            logger.info(f"Connecting to SMTP server: {self.config.smtp_server}:{self.config.smtp_port}")
             
             with smtplib.SMTP(self.config.smtp_server, self.config.smtp_port) as server:
+                server.set_debuglevel(debug_level)
+                
+                # Log server properties
+                logger.info(f"SMTP server properties: {server.ehlo()}")
+                
                 if self.config.use_tls:
+                    logger.info("Starting TLS...")
                     server.starttls(context=context)
+                    logger.info("TLS started, sending EHLO again...")
+                    logger.info(f"After TLS: {server.ehlo()}")
                 
-                server.login(self.config.smtp_username, self.config.smtp_password)
-                server.send_message(msg)
+                logger.info("Authenticating with SMTP server...")
+                try:
+                    server.login(self.config.smtp_username, self.config.smtp_password)
+                    logger.info("SMTP authentication successful")
+                except Exception as auth_error:
+                    logger.error(f"SMTP authentication failed: {str(auth_error)}")
+                    return False
                 
-            logger.info(f"Email sent to {to_email}")
-            return True
+                logger.info(f"Sending email to {to_email}...")
+                try:
+                    server.send_message(msg)
+                    logger.info(f"Email successfully sent to {to_email}")
+                    return True
+                except Exception as send_error:
+                    logger.error(f"Failed to send email to {to_email}: {str(send_error)}")
+                    return False
             
         except Exception as e:
-            logger.error(f"Failed to send email to {to_email}: {str(e)}")
+            logger.error(f"Error in _send_email to {to_email}: {str(e)}", exc_info=True)
             return False
     
     def send_magic_link(self, email: str, token: str, user_agent: Optional[str] = None, 
@@ -102,8 +165,8 @@ class EmailService:
         Returns:
             bool: True if email was sent successfully, False otherwise
         """
-        # Generate the magic link
-        magic_link = f"{self.config.base_url}/auth/verify?token={token}"
+        # Generate the magic link - using root path with token as query parameter
+        magic_link = f"{self.config.base_url}/?token={token}"
         
         # Create email content
         subject = f"Your {self.config.app_name} Login Link"
