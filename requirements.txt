@@ -1,33 +1,64 @@
 # Core dependencies
-streamlit>=1.24.0
-pandas>=2.0.0
-numpy>=1.24.0
+streamlit==1.32.0
+pandas==2.1.4
+numpy==1.26.4
+python-dotenv==1.0.0
 
-# PDF Processing
-PyPDF2>=3.0.1
-pdfplumber>=0.10.2
+# Authentication
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+python-multipart==0.0.6
+email-validator==2.1.0.post1
 
 # Database
-SQLAlchemy>=2.0.15
-
-# Data Visualization
-plotly>=5.15.0
+SQLAlchemy==2.0.25
+alembic==1.13.1
 
 # Security
-python-jose[cryptography]>=3.3.0
-passlib[bcrypt]>=1.7.4
-python-dotenv>=1.0.0
-cryptography>=3.4.7
-pyjwt>=2.4.0
+cryptography==42.0.5
+PyJWT==2.8.0
+python-jose[cryptography]==3.3.0
+
+# PDF Processing
+PyPDF2==3.0.1
+pdfplumber==0.10.3
+
+# Data Visualization
+plotly==5.18.0
+
+# Email
+aiosmtplib==2.0.4
+email-validator==2.1.0.post1
 
 # Date handling
-python-dateutil>=2.8.2
+python-dateutil==2.8.2
+pytz==2024.1
 
 # Development
-black>=22.3.0
-mypy>=0.950
-pylint>=2.13.5
-pytest>=7.1.2
+typing-extensions==4.10.0
+black==24.3.0
+mypy==1.8.0
+pylint==3.0.3
+pytest==7.4.4
+pytest-cov==4.1.0
+pytest-mock==3.12.0
 
 # Excel
-xlsxwriter>=3.1.0
+xlsxwriter==3.1.9
+
+# Testing
+pytest-asyncio==0.23.5
+pytest-mock==3.12.0
+pytest-cov==4.1.0
+
+# Pydantic
+pydantic==2.5.3
+pydantic-settings==2.1.0
+
+# Async
+anyio==4.2.0
+asgiref==3.7.2
+
+# Utilities
+python-slugify==8.0.1
+python-multipart==0.0.6

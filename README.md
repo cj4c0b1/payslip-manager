@@ -9,7 +9,14 @@ A Streamlit-based application for managing and analyzing employee payslips in PD
 - **Dashboard**: View key metrics and visualizations
 - **Reports**: Generate detailed reports on earnings and deductions
 - **Export**: Export data in multiple formats (CSV, Excel, PDF)
-- **User Authentication**: Basic authentication for security
+- **Secure Authentication**: Passwordless email-based authentication with magic links
+  - No passwords to remember or manage
+  - Single-use, time-limited login links
+  - Automatic cleanup of expired tokens
+  - Rate limiting for security
+- **Role-Based Access Control**: Fine-grained permissions for different user roles
+- **Audit Logging**: Track all authentication events and sensitive operations
+- **Data Encryption**: Sensitive data encrypted at rest and in transit
 
 ## Installation
 
@@ -50,15 +57,33 @@ A Streamlit-based application for managing and analyzing employee payslips in PD
 payslip-manager/
 ├── src/
 │   ├── __init__.py
-│   ├── database.py      # Database models and connection
-│   └── pdf_parser.py    # PDF processing logic
-├── uploads/             # Directory for uploaded PDFs
-│   └── processed/       # Processed PDFs are moved here
-├── data/
-│   └── payslips.db    # SQLite database
-├── main.py              # Main Streamlit application
-├── requirements.txt     # Python dependencies
-└── README.md           # This file
+│   ├── auth/                  # Authentication module
+│   │   ├── __init__.py
+│   │   ├── models.py          # Database models for auth
+│   │   ├── schemas.py         # Pydantic schemas
+│   │   ├── service.py         # Core auth logic
+│   │   └── email_utils.py     # Email sending utilities
+│   ├── database.py            # Database connection and session management
+│   ├── models/                # SQLAlchemy models
+│   │   ├── __init__.py
+│   │   ├── base.py            # Base model and mixins
+│   │   ├── employee.py        # Employee model
+│   │   ├── payslip.py         # Payslip model
+│   │   ├── earning.py         # Earning model
+│   │   └── deduction.py       # Deduction model
+│   └── security.py            # Security utilities
+├── tests/                     # Test files
+│   ├── __init__.py
+│   ├── conftest.py            # Test configuration
+│   └── test_auth.py           # Authentication tests
+├── uploads/                   # Directory for uploaded PDFs
+│   └── processed/             # Processed PDFs are moved here
+├── data/                      # Data directory
+│   └── payslips.db            # SQLite database
+├── main.py                    # Main Streamlit application
+├── requirements.txt           # Python dependencies
+├── .env.example              # Example environment variables
+└── README.md                 # This file
 ```
 
 ## Configuration

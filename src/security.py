@@ -103,12 +103,21 @@ def hash_password(password: str, salt: Optional[bytes] = None) -> tuple[bytes, b
 
 def verify_password(stored_salt: bytes, stored_key: bytes, password: str) -> bool:
     """Verify a password against a stored salt and key."""
-    try:
-        _, new_key = hash_password(password, stored_salt)
-        return hmac.compare_digest(stored_key, new_key)
-    except Exception as e:
-        logger.error("Password verification failed: %s", str(e))
-        return False
+    salt, key = hash_password(password, stored_salt)
+    return hmac.compare_digest(stored_key, key)
+
+def get_password_hash(password: str) -> str:
+    """
+    Hash a password and return a string representation.
+    
+    Args:
+        password: The password to hash
+        
+    Returns:
+        str: A string in the format 'salt:key' that can be used to verify the password later
+    """
+    salt, key = hash_password(password)
+    return f"{salt.hex()}:{key.hex()}"
 
 # Initialize a default encryption manager for convenience
 try:
