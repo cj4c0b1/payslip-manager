@@ -188,11 +188,16 @@ class AuthService:
         Returns:
             tuple: (is_valid, user_data) - Whether the token is valid and associated user data if valid
         """
+        logger = logging.getLogger(__name__)
+        logger.info(f"Starting token verification for token: {token[:8]}...")
+        
         token_hash = self._hash_token(token)
         now = datetime.utcnow()
+        logger.info(f"Token hashed, current time: {now}")
         
         try:
             # Find the token in the database
+            logger.info("Querying database for token...")
             db_token = self.db.query(MagicToken).filter(
                 MagicToken.token_hash == token_hash,
                 MagicToken.used == False,
@@ -200,11 +205,15 @@ class AuthService:
             ).first()
             
             if not db_token:
+                logger.warning("No valid token found in database")
                 return False, None
+            
+            logger.info(f"Found token for email: {db_token.email}, expires at: {db_token.expires_at}")
             
             # Mark token as used
             db_token.used = True
             db_token.used_at = now
+            logger.info(f"Marking token as used at {now}")
             
             # For now, we'll just use the email from the token
             # In a production app, you'd want to have a proper user model
@@ -216,7 +225,9 @@ class AuthService:
                 'last_login': now
             }
             
+            logger.info(f"Committing token usage to database")
             self.db.commit()
+            logger.info("Token verification successful")
             
             return True, user_data
             

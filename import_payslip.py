@@ -13,16 +13,23 @@ def get_or_create_employee(session: Session, employee_data: dict) -> Employee:
     if not employee_data.get('cpf'):
         raise ValueError("Employee CPF is required")
     
+    # Split name into first and last name
+    name = employee_data.get('name', 'Unknown')
+    name_parts = name.split(' ', 1)
+    first_name = name_parts[0] if name_parts else 'Unknown'
+    last_name = name_parts[1] if len(name_parts) > 1 else ''
+    
     # Try to find existing employee by CPF
     employee = session.query(Employee).filter(
-        Employee.employee_id == employee_data['cpf']
+        Employee.cpf == employee_data['cpf']
     ).first()
     
     if not employee:
         # Create new employee
         employee = Employee(
-            employee_id=employee_data['cpf'],
-            name=employee_data.get('name', 'Unknown'),
+            cpf=employee_data['cpf'],
+            first_name=first_name,
+            last_name=last_name,
             email=f"{employee_data.get('cpf', '')}@military.gov.br",
             department="Military",
             position=employee_data.get('rank', 'Military Personnel'),
@@ -35,7 +42,7 @@ def get_or_create_employee(session: Session, employee_data: dict) -> Employee:
             session.rollback()
             # Try to get the employee again in case of race condition
             employee = session.query(Employee).filter(
-                Employee.employee_id == employee_data['cpf']
+                Employee.cpf == employee_data['cpf']
             ).first()
     
     return employee

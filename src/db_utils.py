@@ -224,12 +224,12 @@ def get_employee_by_id(employee_id: int, session: Optional[Session] = None) -> O
             return db_session.query(Employee).get(employee_id)
     return session.query(Employee).get(employee_id)
 
-def get_employee_by_employee_id(employee_code: str, session: Optional[Session] = None) -> Optional[Employee]:
-    """Get an employee by their employee ID/code."""
+def get_employee_by_cpf(cpf: str, session: Optional[Session] = None) -> Optional[Employee]:
+    """Get an employee by their CPF (Brazilian ID)."""
     if session is None:
         with get_db_session() as db_session:
-            return db_session.query(Employee).filter(Employee.employee_id == employee_code).first()
-    return session.query(Employee).filter(Employee.employee_id == employee_code).first()
+            return db_session.query(Employee).filter(Employee.cpf == cpf).first()
+    return session.query(Employee).filter(Employee.cpf == cpf).first()
 
 def search_employees(
     query: str,
@@ -237,7 +237,7 @@ def search_employees(
     limit: int = 10
 ) -> List[Employee]:
     """
-    Search for employees by name, email, or employee ID.
+    Search for employees by name, email, or CPF.
     
     Args:
         query: Search term
@@ -250,11 +250,12 @@ def search_employees(
     search = f"%{query}%"
     q = Employee.query.filter(
         or_(
-            Employee.name.ilike(search),
+            Employee.first_name.ilike(search),
+            Employee.last_name.ilike(search),
             Employee.email.ilike(search),
-            Employee.employee_id.ilike(search)
+            Employee.cpf.ilike(search)
         )
-    ).order_by(Employee.name)
+    ).order_by(Employee.first_name, Employee.last_name)
     
     if limit:
         q = q.limit(limit)

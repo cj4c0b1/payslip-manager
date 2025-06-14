@@ -3,6 +3,7 @@ import base64
 import hashlib
 import hmac
 import streamlit as st
+from sqlalchemy.exc import SQLAlchemyError
 
 # Set page config must be the first Streamlit command
 st.set_page_config(
@@ -329,7 +330,7 @@ class PayslipManager:
         if cpf:
             # Try exact CPF match first
             employee = session.query(Employee).filter(
-                Employee.employee_id == cpf
+                Employee.cpf == cpf
             ).first()
             
             if employee:
@@ -339,7 +340,7 @@ class PayslipManager:
             # Try with CPF_ prefix for backward compatibility
             prefixed_cpf = f"CPF_{cpf}"
             employee = session.query(Employee).filter(
-                Employee.employee_id == prefixed_cpf
+                Employee.cpf == prefixed_cpf
             ).first()
             
             if employee:
@@ -349,47 +350,55 @@ class PayslipManager:
         # If we have an employee_id but no CPF match, try that
         if employee_id and employee_id != cpf and employee_id != f"CPF_{cpf}":
             employee = session.query(Employee).filter(
-                Employee.employee_id == employee_id
+                Employee.id == employee_id
             ).first()
             
             if employee:
-                logger.debug(f"Found employee by employee_id: {employee_id}")
+                logger.debug(f"Found employee by ID: {employee_id}")
                 return employee
         
         # If we get here, we need to create a new employee
-        # Use CPF as employee_id if available (matching import_payslip.py)
-        new_employee_id = cpf if cpf else employee_id
+        # Use CPF as the identifier if available
+        new_employee_cpf = cpf if cpf else employee_id
         
-        if not new_employee_id:
+        if not new_employee_cpf:
             raise ValueError(
-                "Could not determine employee ID. "
+                "Could not determine employee identifier. "
                 f"CPF: {cpf}, employee_id: {employee_id}"
             )
         
         # Create new employee
-        logger.info(f"Creating new employee with ID: {new_employee_id}")
+        logger.info(f"Creating new employee with CPF: {new_employee_cpf}")
         
-        # Create employee data without the cpf field since it's not in the model
-        employee_data = {
-            'employee_id': str(new_employee_id),
-            'name': employee_info.get('name', 'Unknown').strip(),
-            'department': employee_info.get('department', '').strip(),
-            'position': employee_info.get('position', '').strip(),
-            'is_active': True
-        }
-        
-        # Set email to a default if not provided
-        if 'email' not in employee_info:
-            employee_data['email'] = f"{str(new_employee_id).lower().replace('.', '').replace('-', '')}@example.com"
-        else:
-            employee_data['email'] = employee_info['email']
+        # Split name into first and last name if available
+        name = employee_info.get('name', 'Unknown')
+        if name == 'Unknown' and 'email' in employee_info:
+            # Try to get name from email if name is not provided
+            name = employee_info['email'].split('@')[0].replace('.', ' ').title()
             
-        employee = Employee(**employee_data)
+        name_parts = name.split(' ', 1)
+        first_name = name_parts[0] if name_parts else 'Unknown'
+        last_name = name_parts[1] if len(name_parts) > 1 else ''
+        
+        # Create the employee with the correct fields
+        employee = Employee(
+            first_name=first_name,
+            last_name=last_name,
+            email=employee_info.get('email', f"{new_employee_cpf}@example.com"),
+            cpf=new_employee_cpf,
+            is_active=True
+        )
+        
+        # Add department and position if they exist in employee_info
+        if 'department' in employee_info:
+            employee.department = employee_info['department']
+        if 'position' in employee_info:
+            employee.position = employee_info['position']
         
         try:
             session.add(employee)
             session.flush()
-            logger.info(f"Created new employee: {employee.employee_id} - {employee.name}")
+            logger.info(f"Created new employee: {employee.id} - {employee.first_name} {employee.last_name}")
             return employee
             
         except SQLAlchemyError as e:
@@ -597,7 +606,7 @@ class PayslipManager:
                         session.commit()
                         result = {
                             'success': True,
-                            'employee': employee.name,
+                            'employee': f"{employee.first_name} {employee.last_name}".strip(),
                             'period': payslip.reference_period,
                             'net_amount': payslip.net_amount
                         }
@@ -903,7 +912,7 @@ class PayslipManager:
             
             if existing_payslip:
                 st.warning(
-                    f"⚠️ Payslip for {employee.name} "
+                    f"⚠️ Payslip for {employee.first_name} {employee.last_name} "
                     f"({payment_info['reference_month'].strftime('%B %Y')}) already exists. Skipping..."
                 )
                 return False
@@ -1032,7 +1041,7 @@ class PayslipManager:
             calculated_net = float(payslip.gross_salary) - float(payslip.total_deductions)
             if calculated_net < 0:
                 logger.warning(
-                    f"Net salary would be negative (${calculated_net:.2f}) for employee {employee.employee_id} "
+                    f"Net salary would be negative (${calculated_net:.2f}) for employee {employee.id} "
                     f"in {reference_date.strftime('%Y-%m')}. Setting to 0."
                 )
                 calculated_net = 0.0
@@ -1246,14 +1255,16 @@ def show_payslip_details(payslip, session):
     """
     employee = session.get(Employee, payslip.employee_id)
     
-    with st.expander(f"📄 Payslip Details - {employee.name if employee else 'Unknown'} - {payslip.reference_month.strftime('%B %Y') if payslip.reference_month else 'N/A'}", expanded=True):
+    employee_name = f"{employee.first_name} {employee.last_name}".strip() if employee else 'Unknown'
+    with st.expander(f"📄 Payslip Details - {employee_name} - {payslip.reference_month.strftime('%B %Y') if payslip.reference_month else 'N/A'}", expanded=True):
         # Basic information
         col1, col2 = st.columns(2)
         
         with col1:
             st.subheader("Employee Information")
-            st.write(f"**Name:** {employee.name if employee else 'N/A'}")
-            st.write(f"**Employee ID:** {employee.employee_id if employee else 'N/A'}")
+            employee_name = f"{employee.first_name} {employee.last_name}".strip() if employee else 'N/A'
+            st.write(f"**Name:** {employee_name}")
+            st.write(f"**Employee ID:** {employee.id if employee else 'N/A'}")
             st.write(f"**Department:** {employee.department if employee and employee.department else 'N/A'}")
             st.write(f"**Position:** {employee.position if employee and employee.position else 'N/A'}")
         
@@ -1348,7 +1359,7 @@ def show_view_page(manager):
             # Employee filter
             with manager.get_session() as session:
                 employees = session.query(Employee).order_by(Employee.first_name, Employee.last_name).all()
-                employee_options = ["All Employees"] + [f"{emp.first_name} {emp.last_name or ''} ({emp.employee_id})".strip() for emp in employees]
+                employee_options = ["All Employees"] + [f"{emp.first_name} {emp.last_name or ''} ({emp.id})".strip() for emp in employees]
                 
         selected_employee = col1.selectbox(
             "Employee",
@@ -1382,8 +1393,8 @@ def show_view_page(manager):
         
         # Apply filters
         if selected_employee != "All Employees":
-            employee_id = selected_employee.split('(')[-1].rstrip(')')
-            query = query.filter(Employee.employee_id == employee_id)
+            employee_id = int(selected_employee.split('(')[-1].rstrip(')'))
+            query = query.filter(Employee.id == employee_id)
             
         if selected_year != "All Years":
             query = query.filter(func.strftime('%Y', Payslip.reference_month) == selected_year)
@@ -1405,8 +1416,8 @@ def show_view_page(manager):
             employee = session.get(Employee, payslip.employee_id)
             data.append({
                 "ID": payslip.id,
-                "Employee": employee.name if employee else "Unknown",
-                "Employee ID": employee.employee_id if employee else "N/A",
+                "Employee": f"{employee.first_name} {employee.last_name}" if employee else "Unknown",
+                "Employee ID": employee.id if employee else "N/A",
                 "Reference Month": payslip.reference_month.strftime("%B %Y") if payslip.reference_month else "N/A",
                 "Gross Salary": float(payslip.gross_salary) if payslip.gross_salary else 0.0,
                 "Net Salary": float(payslip.net_salary) if payslip.net_salary else 0.0,
@@ -1511,9 +1522,9 @@ def show_reports_page(manager):
             st.info("No payslip data available for reporting.")
             return
         
-        # Add employee filter
-        employees = session.query(Employee).order_by(Employee.name).all()
-        employee_options = ["All Employees"] + [f"{emp.name} ({emp.employee_id})" for emp in employees]
+        # Get employee options for the filter
+        employees = session.query(Employee).order_by(Employee.last_name, Employee.first_name).all()
+        employee_options = ["All Employees"] + [f"{emp.last_name}, {emp.first_name} ({emp.id})" for emp in employees]
         
         selected_employee = st.sidebar.selectbox(
             "Employee",
@@ -1526,8 +1537,8 @@ def show_reports_page(manager):
         
         # Apply filters
         if selected_employee != "All Employees":
-            employee_id = selected_employee.split('(')[-1].rstrip(')')
-            query = query.filter(Employee.employee_id == employee_id)
+            employee_id = int(selected_employee.split('(')[-1].rstrip(')'))
+            query = query.filter(Employee.id == employee_id)
         
         # Apply date range filter
         query = query.filter(
@@ -1546,9 +1557,10 @@ def show_reports_page(manager):
         data = []
         for payslip, employee in results:
             data.append({
-                "Employee": employee.name,
-                "Employee ID": employee.employee_id,
-                "Department": employee.department or "N/A",
+                "Employee": f"{employee.first_name} {employee.last_name}".strip(),
+                "Employee ID": employee.id,
+                "Department": (employee.department or "N/A") if hasattr(employee, 'department') else "N/A",
+                "Position": (employee.position or "N/A") if hasattr(employee, 'position') else "N/A",
                 "Reference Month": payslip.reference_month,
                 "Year": payslip.reference_month.year,
                 "Month": payslip.reference_month.month,
@@ -1699,8 +1711,8 @@ def show_reports_page(manager):
         for payslip in payslips:
             employee = session.get(Employee, payslip.employee_id)
             data.append({
-                "Employee": employee.name if employee else "Unknown",
-                "Employee ID": employee.employee_id if employee else "N/A",
+                "Employee": f"{employee.first_name} {employee.last_name}".strip() if employee else "Unknown",
+                "Employee ID": employee.id if employee else "N/A",
                 "Department": employee.department if employee and hasattr(employee, 'department') else "N/A",
                 "Position": employee.position if employee and hasattr(employee, 'position') else "N/A",
                 "Reference Month": payslip.reference_month,
@@ -1892,9 +1904,14 @@ def main_app():
     st.sidebar.title("Navigation")
     page = st.sidebar.radio(
         "Go to",
-        ["Upload", "View", "Reports"],
+        ["Upload", "View", "Reports", "Employees"],
         index=0,
-        format_func=lambda x: {"Upload": "📤 Upload", "View": "👀 View", "Reports": "📊 Reports"}[x]
+        format_func=lambda x: {
+            "Upload": "📤 Upload", 
+            "View": "👀 View", 
+            "Reports": "📊 Reports",
+            "Employees": "👥 Employees"
+        }[x]
     )
     
     # Main app logic
@@ -1906,28 +1923,170 @@ def main_app():
         show_view_page(manager)
     elif page == "Reports":
         show_reports_page(manager)
+    elif page == "Employees":
+        show_employee_management_page(manager)
+
+def show_employee_management_page(manager):
+    """Display the employee management page."""
+    st.title("👥 Employee Management")
+    
+    # Initialize session state for form visibility
+    if 'show_employee_form' not in st.session_state:
+        st.session_state.show_employee_form = False
+    if 'editing_employee_id' not in st.session_state:
+        st.session_state.editing_employee_id = None
+    
+    # Add new employee button
+    if st.button("➕ Add New Employee") and not st.session_state.show_employee_form:
+        st.session_state.show_employee_form = True
+        st.session_state.editing_employee_id = None
+    
+    # Employee form
+    if st.session_state.show_employee_form:
+        with st.form("employee_form"):
+            st.subheader("Employee Details")
+            
+            # Form fields
+            first_name = st.text_input("First Name", key="emp_first_name")
+            last_name = st.text_input("Last Name", key="emp_last_name")
+            email = st.text_input("Email", key="emp_email")
+            cpf = st.text_input("CPF", key="emp_cpf", 
+                             help="Brazilian CPF (format: 000.000.000-00)")
+            department = st.text_input("Department", key="emp_dept")
+            position = st.text_input("Position", key="emp_position")
+            is_active = st.checkbox("Active", value=True, key="emp_active")
+            
+            col1, col2 = st.columns(2)
+            with col1:
+                if st.form_submit_button("💾 Save"):
+                    try:
+                        with manager.get_session() as session:
+                            employee_data = {
+                                'first_name': first_name,
+                                'last_name': last_name,
+                                'email': email,
+                                'cpf': cpf,
+                                'department': department,
+                                'position': position,
+                                'is_active': is_active
+                            }
+                            
+                            if st.session_state.editing_employee_id:
+                                # Update existing employee
+                                employee = session.get(Employee, st.session_state.editing_employee_id)
+                                if employee:
+                                    for key, value in employee_data.items():
+                                        setattr(employee, key, value)
+                                    session.commit()
+                                    st.success("Employee updated successfully!")
+                            else:
+                                # Create new employee
+                                employee = Employee(**employee_data)
+                                session.add(employee)
+                                session.commit()
+                                st.success("Employee created successfully!")
+                            
+                            # Reset form
+                            st.session_state.show_employee_form = False
+                            st.session_state.editing_employee_id = None
+                            st.rerun()
+                            
+                    except Exception as e:
+                        st.error(f"Error saving employee: {str(e)}")
+            
+            with col2:
+                if st.form_submit_button("❌ Cancel"):
+                    st.session_state.show_employee_form = False
+                    st.session_state.editing_employee_id = None
+                    st.rerun()
+    
+    # Employees list
+    st.subheader("Employees")
+    
+    with manager.get_session() as session:
+        employees = session.query(Employee).order_by(Employee.last_name, Employee.first_name).all()
+        
+        if not employees:
+            st.info("No employees found. Add a new employee to get started.")
+            return
+        
+        # Create a DataFrame for display
+        data = []
+        for emp in employees:
+            data.append({
+                "ID": emp.id,
+                "Name": f"{emp.last_name}, {emp.first_name}" if emp.first_name or emp.last_name else "N/A",
+                "Email": emp.email or "N/A",
+                "CPF": emp.cpf or "N/A",
+                "Department": emp.department or "N/A",
+                "Position": emp.position or "N/A",
+                "Status": "Active" if emp.is_active else "Inactive"
+            })
+        
+        if data:
+            # Display as a table with action buttons
+            for idx, emp in enumerate(data):
+                cols = st.columns([1, 3, 3, 2, 2, 2, 1, 1])
+                with cols[0]:
+                    st.write(emp["ID"])
+                with cols[1]:
+                    st.write(emp["Name"])
+                with cols[2]:
+                    st.write(emp["Email"])
+                with cols[3]:
+                    st.write(emp["Department"])
+                with cols[4]:
+                    st.write(emp["Position"])
+                with cols[5]:
+                    status_color = "green" if emp["Status"] == "Active" else "red"
+                    st.markdown(f"<span style='color: {status_color}'>{emp['Status']}</span>", 
+                                unsafe_allow_html=True)
+                with cols[6]:
+                    if st.button("✏️", key=f"edit_{emp['ID']}"):
+                        st.session_state.show_employee_form = True
+                        st.session_state.editing_employee_id = emp["ID"]
+                        st.rerun()
+                with cols[7]:
+                    if st.button("🗑️", key=f"delete_{emp['ID']}"):
+                        try:
+                            with manager.get_session() as sess:
+                                employee = sess.get(Employee, emp["ID"])
+                                if employee:
+                                    sess.delete(employee)
+                                    sess.commit()
+                                    st.success(f"Employee {emp['Name']} deleted successfully!")
+                                    st.rerun()
+                        except Exception as e:
+                            st.error(f"Error deleting employee: {str(e)}")
 
 def verify_magic_link(token: str) -> bool:
     """Verify a magic link token and log the user in if valid."""
     try:
+        logger.info(f"Verifying magic link token: {token[:8]}...")
         from src.auth.service import auth_service_scope
         
         with auth_service_scope() as auth_service:
+            logger.info("Auth service scope entered successfully")
             is_valid, user_data = auth_service.verify_token(token)
+            logger.info(f"Token verification result: is_valid={is_valid}, user_data={user_data}")
             
             if is_valid and user_data:
                 st.session_state.authenticated = True
                 st.session_state.username = user_data.get('email', 'user')
-                st.success("✅ Successfully logged in with magic link!")
+                logger.info(f"User {st.session_state.username} authenticated successfully via magic link")
+                st.toast("✅ Successfully logged in with magic link!")
                 st.rerun()
                 return True
             else:
-                st.error("❌ Invalid or expired magic link. Please request a new one.")
+                error_msg = "Invalid or expired magic link. Please request a new one."
+                logger.warning(error_msg)
+                st.error(f"❌ {error_msg}")
                 return False
                 
     except Exception as e:
-        logger.error(f"Error verifying magic link: {str(e)}", exc_info=True)
-        st.error(f"❌ An error occurred while verifying the magic link: {str(e)}")
+        error_msg = f"Error verifying magic link: {str(e)}"
+        logger.error(error_msg, exc_info=True)
+        st.error(f"❌ {error_msg}")
         return False
 
 def main():
