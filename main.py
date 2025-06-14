@@ -1347,8 +1347,8 @@ def show_view_page(manager):
         with col1:
             # Employee filter
             with manager.get_session() as session:
-                employees = session.query(Employee).order_by(Employee.name).all()
-                employee_options = ["All Employees"] + [f"{emp.name} ({emp.employee_id})" for emp in employees]
+                employees = session.query(Employee).order_by(Employee.first_name, Employee.last_name).all()
+                employee_options = ["All Employees"] + [f"{emp.first_name} {emp.last_name or ''} ({emp.employee_id})".strip() for emp in employees]
                 
         selected_employee = col1.selectbox(
             "Employee",
