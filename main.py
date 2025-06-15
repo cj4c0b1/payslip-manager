@@ -4,6 +4,48 @@ import hashlib
 import hmac
 import streamlit as st
 from sqlalchemy.exc import SQLAlchemyError
+from datetime import datetime, timedelta
+from typing import Optional, Dict, Any, List, Union
+from pathlib import Path
+import json
+import logging
+import sys
+
+# Configure root logger
+root_logger = logging.getLogger()
+root_logger.setLevel(logging.DEBUG)
+
+# Create logs directory if it doesn't exist
+log_dir = Path('logs')
+log_dir.mkdir(exist_ok=True)
+
+# Create file handler which logs even debug messages
+log_file = log_dir / 'app_debug.log'
+fh = logging.FileHandler(log_file, mode='a')
+fh.setLevel(logging.DEBUG)
+
+# Create console handler with a higher log level
+ch = logging.StreamHandler()
+ch.setLevel(logging.INFO)
+
+# Create formatter and add it to the handlers
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+fh.setFormatter(formatter)
+ch.setFormatter(formatter)
+
+# Add the handlers to the root logger
+root_logger.addHandler(fh)
+root_logger.addHandler(ch)
+
+# Get logger for this module
+logger = logging.getLogger(__name__)
+
+# Suppress noisy loggers
+for logger_name in ['urllib3', 'github', 'git', 'git.cmd', 'git.util', 'git.cmd', 'git.remote']:
+    logging.getLogger(logger_name).setLevel(logging.WARNING)
+
+logger.info("Application starting with debug logging enabled")
+logger.debug("Debug logging is active")
 
 # Set page config must be the first Streamlit command
 st.set_page_config(
@@ -14,6 +56,7 @@ st.set_page_config(
 
 import pandas as pd
 import plotly.express as px
+from passlib.context import CryptContext
 from datetime import datetime, date, timedelta
 from pathlib import Path
 import shutil
@@ -112,7 +155,7 @@ def login_form() -> bool:
     logger.debug("Rendering login form")
     
     # Set page title and header
-    st.title("🔒 Payslip Manager Login")
+    st.title("Login")
     st.markdown("Please sign in with your credentials or request a magic link.")
     
     # Create tabs for different login methods
@@ -235,6 +278,13 @@ def require_auth():
 from src.database import (
     init_db, get_session, get_db_session, get_db, Base, engine, Session
 )
+
+# Import theme utilities
+from src.utils.theme_utils import init_theme, render_theme_toggle
+
+# Import slash command system
+from src.commands import handle_command, show_help
+from src.github_integration import get_github_client
 from src.models.employee import Employee
 from src.models.payslip import Payslip
 from src.models.earning import Earning
@@ -1848,8 +1898,51 @@ def reset_database():
             print("Restored database from backup")
         return False
 
+def show_command_help():
+    """Display help for available slash commands."""
+    with st.sidebar.expander("Available Commands", expanded=False):
+        st.markdown("### Slash Commands")
+        st.markdown("Type a command in the input field below:")
+        st.markdown("\n".join([
+            "- `/help` - Show available commands",
+            "- `/issue type:<feature|bug|task> title:<title>` - Create a new GitHub issue"
+        ]))
+        st.markdown("\nExample: `/issue type:feature title:Add dark mode`")
+
+def handle_command_input():
+    """Handle command input from the user."""
+    # Add command input to the sidebar
+    with st.sidebar:
+        st.markdown("---")
+        st.markdown("### Command Prompt")
+        
+        # Show command help in an expander
+        show_command_help()
+        
+        # Command input
+        cmd = st.text_input(
+            "Enter a command (start with /)",
+            key="command_input",
+            placeholder="Type /help for available commands"
+        )
+        
+        # Handle command execution
+        if cmd and cmd.startswith('/'):
+            result = handle_command(cmd)
+            if result:  # Only show if there's a result (not None for forms)
+                st.info(result)
+                # Clear the input after successful command
+                st.session_state.command_input = ""
+
 def main_app():
     """Main application layout and routing."""
+    # Initialize theme - do this before any other UI elements
+    init_theme()
+    
+    # Initialize GitHub client to check if integration is available
+    if 'github_available' not in st.session_state:
+        st.session_state.github_available = get_github_client() is not None
+    
     # Check if we need to reset the database
     if Path("data/payslips.db").exists():
         with get_db_session() as session:
@@ -1866,6 +1959,19 @@ def main_app():
                     return
                 else:
                     raise
+    
+    # Add theme CSS
+    def load_css():
+        try:
+            with open("src/assets/css/theme.css", "r") as f:
+                return f"<style>{f.read()}</style>"
+        except FileNotFoundError:
+            logger.error("Theme CSS file not found")
+            return ""
+    
+    css = load_css()
+    if css:
+        st.markdown(css, unsafe_allow_html=True)
     
     # Security-focused styles and custom CSS
     st.markdown("""
@@ -1887,13 +1993,18 @@ def main_app():
             width: 100%;
         }
         .stProgress > div > div > div > div {
-            background-color: #1f77b4;
+            background-color: var(--accent, #1f77b4);
         }
         .stAlert {
             padding: 1em;
         }
     </style>
     """, unsafe_allow_html=True)
+    
+    # Add theme toggle to sidebar (only when authenticated)
+    if 'authenticated' in st.session_state and st.session_state.authenticated:
+        render_theme_toggle()
+        st.sidebar.markdown("---")
     
     # Add logout button to sidebar
     if st.sidebar.button("Logout"):

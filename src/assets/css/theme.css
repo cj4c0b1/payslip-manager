@@ -7,7 +7,7 @@
   --primary-text: #212529;
   --secondary-text: #6c757d;
   --accent: #1a73e8;
-  --accent-hover: #0d62c9;
+  --accent-hover: #1a73e8; /* Same as accent to prevent hover effect */
   --border: #dee2e6;
   --card-bg: #ffffff;
   --card-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
@@ -20,11 +20,11 @@
   --danger: #dc3545;
   --danger-bg: #f8d7da;
   --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  --transition: all 0.2s ease-in-out;
+  --transition: none; /* Remove transitions to prevent flashing */
   --border-radius: 8px;
   --sidebar-bg: #f8f9fa;
   --sidebar-text: #212529;
-  --sidebar-hover: #e9ecef;
+  --sidebar-hover: #f8f9fa; /* Same as sidebar-bg to prevent hover effect */
   --code-bg: #f1f3f5;
   --code-text: #e64980;
 }
@@ -37,7 +37,7 @@
   --primary-text: #f8f9fa;
   --secondary-text: #adb5bd;
   --accent: #4dabf7;
-  --accent-hover: #74c0fc;
+  --accent-hover: #4dabf7; /* Same as accent to prevent hover effect */
   --border: #3a424e;
   --card-bg: #242a32;
   --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
@@ -84,20 +84,26 @@ html, body, #root, #root > div {
   background-color: var(--accent);
   color: white;
   border: 1px solid var(--accent);
-  transition: var(--transition);
+  transition: none !important;
   margin: 0.5rem 0;
   width: 100%;
 }
 
+/* Remove all hover effects from sidebar buttons */
 [data-testid="stSidebar"] .stButton > button:hover {
-  background-color: var(--accent-hover);
-  border-color: var(--accent-hover);
+  background-color: var(--accent) !important;
+  border-color: var(--accent) !important;
+  transform: none !important;
+  box-shadow: none !important;
+  cursor: pointer !important;
+  opacity: 1 !important;
 }
 
-/* Navigation links */
+/* Navigation links - remove hover effects */
 [data-testid="stSidebarNav"] a {
   color: var(--sidebar-text) !important;
-  transition: var(--transition);
+  transition: none !important;
+  pointer-events: none;
 }
 
 [data-testid="stSidebarNav"] a:hover {
@@ -225,6 +231,7 @@ header[data-testid="stHeader"] > div > div > div > div,
   color: #ffffff !important; /* Force white text */
   font-weight: 600 !important; /* Bolder text */
   text-shadow: 0 1px 2px rgba(0,0,0,0.5) !important; /* Add shadow for better contrast */
+  pointer-events: none;
 }
 
 /* Style for the counter badges */
@@ -479,14 +486,51 @@ header[data-testid="stHeader"] > div > div > div > div,
 
 /* Buttons */
 .stButton > button {
-  background-color: var(--accent) !important;
-  color: white !important;
-  border: 1px solid var(--accent) !important;
-  border-radius: var(--border-radius);
-  transition: var(--transition);
+  transition: none !important;
+  pointer-events: auto !important;
+  z-index: 1000 !important;
+  cursor: pointer !important;
 }
 
-.stButton > button:hover {
+/* Force all buttons to have pointer cursor and no hover effects */
+button, .stButton > button, [role="button"] {
+  cursor: pointer !important;
+  transition: none !important;
+}
+
+/* Disable all hover effects globally */
+*:hover {
+  transition: none !important;
+  transform: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+  text-decoration: none !important;
+}
+
+/* Fix for Streamlit's button hover state */
+.stButton > button:hover, 
+.stButton > button:focus, 
+.stButton > button:active {
+  background-color: var(--accent) !important;
+  border-color: var(--accent) !important;
+  color: white !important;
+  transform: none !important;
+  box-shadow: none !important;
+  opacity: 1 !important;
+  outline: none !important;
+}
+
+/* Ensure the theme toggle button is always clickable */
+[data-testid="stSidebar"] .stButton > button {
+  position: relative;
+  z-index: 1001 !important;
+  pointer-events: auto !important;
+}
+
+/* Remove any overlay that might be blocking clicks */
+[data-testid="stSidebar"]::after {
+  display: none !important;
+  pointer-events: none !important;
   background-color: var(--accent-hover) !important;
   border-color: var(--accent-hover) !important;
   transform: translateY(-1px);

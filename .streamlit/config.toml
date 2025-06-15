@@ -14,12 +14,6 @@ maxUploadSize = 50
 # Enable file watcher for development
 fileWatcherType = "auto"
 
-# Security headers (new format)
-# Prevent MIME type sniffing
-server.enableXsrfProtection = true
-server.enableWebsocketCompression = true
-server.enableCORS = true
-
 # Security headers (set via meta tags in the app)
 # These will be set in the app using st.markdown with unsafe_allow_html=True
 
