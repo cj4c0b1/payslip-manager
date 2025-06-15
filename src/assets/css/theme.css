@@ -1,0 +1,810 @@
+/* Light theme (default) */
+:root {
+  /* Base colors */
+  --primary-bg: #ffffff;
+  --secondary-bg: #f8f9fa;
+  --tertiary-bg: #e9ecef;
+  --primary-text: #212529;
+  --secondary-text: #6c757d;
+  --accent: #1a73e8;
+  --accent-hover: #0d62c9;
+  --border: #dee2e6;
+  --card-bg: #ffffff;
+  --card-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --success: #28a745;
+  --success-bg: #d4edda;
+  --info: #17a2b8;
+  --info-bg: #d1ecf1;
+  --warning: #ffc107;
+  --warning-bg: #fff3cd;
+  --danger: #dc3545;
+  --danger-bg: #f8d7da;
+  --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  --transition: all 0.2s ease-in-out;
+  --border-radius: 8px;
+  --sidebar-bg: #f8f9fa;
+  --sidebar-text: #212529;
+  --sidebar-hover: #e9ecef;
+  --code-bg: #f1f3f5;
+  --code-text: #e64980;
+}
+
+/* Dark theme */
+[data-theme="dark"] {
+  --primary-bg: #1a1d23;
+  --secondary-bg: #242a32;
+  --tertiary-bg: #2d343e;
+  --primary-text: #f8f9fa;
+  --secondary-text: #adb5bd;
+  --accent: #4dabf7;
+  --accent-hover: #74c0fc;
+  --border: #3a424e;
+  --card-bg: #242a32;
+  --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --success: #51cf66;
+  --success-bg: #2b8a3e33;
+  --info: #22b8cf;
+  --info-bg: #15aabf33;
+  --warning: #ffd43b;
+  --warning-bg: #fcc41933;
+  --danger: #ff6b6b;
+  --danger-bg: #fa525233;
+  --shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+  --sidebar-bg: #1e2228;
+  --sidebar-text: #e9ecef;
+  --sidebar-hover: #2d343e;
+  --code-bg: #2d3436;
+  --code-text: #91a7ff;
+}
+
+/* Apply theme colors */
+html, body, #root, #root > div {
+  min-height: 100%;
+  margin: 0;
+  padding: 0;
+  background-color: var(--primary-bg);
+  color: var(--primary-text);
+  transition: var(--transition);
+}
+
+/* Ensure Streamlit container respects theme */
+#root, #root > div {
+  background-color: var(--primary-bg);
+  color: var(--primary-text);
+}
+
+/* Sidebar theming */
+[data-testid="stSidebar"] {
+  background-color: var(--sidebar-bg) !important;
+  color: var(--sidebar-text) !important;
+  border-right: 1px solid var(--border) !important;
+}
+
+[data-testid="stSidebar"] .stButton > button {
+  background-color: var(--accent);
+  color: white;
+  border: 1px solid var(--accent);
+  transition: var(--transition);
+  margin: 0.5rem 0;
+  width: 100%;
+}
+
+[data-testid="stSidebar"] .stButton > button:hover {
+  background-color: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+
+/* Navigation links */
+[data-testid="stSidebarNav"] a {
+  color: var(--sidebar-text) !important;
+  transition: var(--transition);
+}
+
+[data-testid="stSidebarNav"] a:hover {
+  color: var(--accent) !important;
+  background-color: var(--sidebar-hover);
+}
+
+/* Main content area */
+.main .block-container {
+  background-color: var(--primary-bg);
+  padding: 2rem 1.5rem;
+  color: var(--primary-text);
+}
+
+/* Form containers */
+.stForm,
+.stForm > div,
+.stForm > div > div {
+  background-color: var(--form-bg) !important;
+  color: var(--primary-text) !important;
+}
+
+.stForm {
+  border: 1px solid var(--border) !important;
+  border-radius: var(--border-radius) !important;
+  padding: 1.5rem !important;
+  margin: 1rem 0 !important;
+  background-color: var(--form-bg) !important;
+}
+
+/* Fix for Streamlit's main container */
+html,
+body,
+#root,
+#root > div,
+#root > div > div,
+.stApp,
+.stApp > div:first-child,
+.stApp > div:first-child > div:first-child,
+.stApp > div:first-child > div:first-child > div:first-child,
+/* More specific selectors for top-level containers */
+#root > div > div > div,
+#root > div > div > div > div,
+#root > div > div > div > div > div,
+#root > div > div > div > div > div > div {
+  background-color: var(--primary-bg) !important;
+  color: var(--primary-text) !important;
+  min-height: 100vh !important;
+}
+
+/* Force all direct children of body to use theme colors */
+body > * {
+  background-color: var(--primary-bg) !important;
+  color: var(--primary-text) !important;
+}
+
+/* Fix for the top bar specifically */
+[data-testid="stHeader"],
+[data-testid="stHeader"] > div,
+[data-testid="stHeader"] > div > div,
+[data-testid="stHeader"] > div > div > div,
+[data-testid="stHeader"] > div > div > div > div,
+/* Even more specific selectors for the top bar */
+header[data-testid="stHeader"],
+header[data-testid="stHeader"] > div,
+header[data-testid="stHeader"] > div > div,
+header[data-testid="stHeader"] > div > div > div,
+header[data-testid="stHeader"] > div > div > div > div,
+/* Direct child selectors for the header */
+#root > div > div > header,
+#root > div > div > header > div,
+#root > div > div > header > div > div,
+#root > div > div > header > div > div > div,
+#root > div > div > header > div > div > div > div {
+  background-color: var(--secondary-bg) !important;
+  color: var(--primary-text) !important;
+  border-bottom: 1px solid var(--border) !important;
+}
+
+/* Force header to be on top of other elements */
+[data-testid="stHeader"] {
+  position: relative;
+  z-index: 1001; /* Higher than other elements */
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Make sure all text in header is visible */
+[data-testid="stHeader"] *,
+[data-testid="stHeader"] a,
+[data-testid="stHeader"] button,
+[data-testid="stHeader"] div,
+[data-testid="stHeader"] span,
+[data-testid="stHeader"] svg,
+[data-testid="stHeader"] path {
+  color: var(--primary-text) !important;
+  fill: var(--primary-text) !important;
+}
+
+/* Fix for any remaining white backgrounds in the header */
+[data-testid="stHeader"] div[style*="background"],
+[data-testid="stHeader"] div[style*="background-color"],
+[data-testid="stHeader"] div[style*="background-color: white"],
+[data-testid="stHeader"] div[style*="background:white"],
+[data-testid="stHeader"] div[style*="background: white"] {
+  background-color: var(--secondary-bg) !important;
+  background: var(--secondary-bg) !important;
+}
+
+/* Navigation Sidebar */
+[data-testid="stSidebar"],
+[data-testid="stSidebar"] > div:first-child,
+[data-testid="stSidebar"] > div:first-child > div:first-child,
+[data-testid="stSidebar"] > div:first-child > div:first-child > div:first-child {
+  background-color: var(--secondary-bg) !important;
+  color: var(--primary-text) !important;
+  border-right: 1px solid var(--border) !important;
+}
+
+/* Menu items and counters */
+[data-testid="stSidebar"] div[data-testid="stMarkdownContainer"],
+[data-testid="stSidebar"] div[data-testid="stMarkdownContainer"] p,
+[data-testid="stSidebar"] div[data-testid="stMarkdownContainer"] strong,
+[data-testid="stSidebar"] div[data-testid="stMarkdownContainer"] span,
+[data-testid="stSidebar"] div[data-testid="stMarkdownContainer"] * {
+  color: #ffffff !important; /* Force white text */
+  font-weight: 600 !important; /* Bolder text */
+  text-shadow: 0 1px 2px rgba(0,0,0,0.5) !important; /* Add shadow for better contrast */
+}
+
+/* Style for the counter badges */
+[data-testid="stSidebar"] div[data-testid="stMarkdownContainer"] code,
+[data-testid="stSidebar"] div[data-testid="stMarkdownContainer"] pre {
+  background-color: #ffffff !important; /* White background */
+  color: #1e1e1e !important; /* Dark text */
+  padding: 3px 10px !important;
+  border-radius: 12px !important;
+  font-size: 0.9em !important;
+  font-weight: 700 !important; /* Bolder text */
+  margin-left: 10px !important;
+  border: none !important;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2) !important;
+  text-shadow: none !important;
+}
+
+/* Hover effect for menu items */
+[data-testid="stSidebar"] div[data-testid="stMarkdownContainer"]:hover,
+[data-testid="stSidebar"] div[data-testid="stMarkdownContainer"]:hover p,
+[data-testid="stSidebar"] div[data-testid="stMarkdownContainer"]:hover span,
+[data-testid="stSidebar"] div[data-testid="stMarkdownContainer"]:hover * {
+  color: #64b5f6 !important; /* Light blue on hover */
+  text-shadow: 0 0 8px rgba(100, 181, 246, 0.8) !important; /* Glow effect */
+}
+
+/* Make sure all links in sidebar are properly colored */
+[data-testid="stSidebar"] a,
+[data-testid="stSidebar"] a:visited,
+[data-testid="stSidebar"] a:active {
+  color: var(--primary-text) !important;
+  text-decoration: none !important;
+}
+
+[data-testid="stSidebar"] a:hover {
+  color: var(--accent-color) !important;
+  text-decoration: none !important;
+}
+
+/* Fix for sidebar content */
+[data-testid="stSidebar"] * {
+  color: var(--primary-text) !important;
+}
+
+[data-testid="stSidebar"] h1,
+[data-testid="stSidebar"] h2,
+[data-testid="stSidebar"] h3,
+[data-testid="stSidebar"] h4,
+[data-testid="stSidebar"] h5,
+[data-testid="stSidebar"] h6,
+[data-testid="stSidebar"] p,
+[data-testid="stSidebar"] span,
+[data-testid="stSidebar"] div {
+  color: var(--primary-text) !important;
+}
+
+/* Fix for sidebar content */
+[data-testid="stSidebar"] * {
+  color: var(--primary-text) !important;
+}
+
+[data-testid="stSidebar"] h1,
+[data-testid="stSidebar"] h2,
+[data-testid="stSidebar"] h3,
+[data-testid="stSidebar"] h4,
+[data-testid="stSidebar"] h5,
+[data-testid="stSidebar"] h6,
+[data-testid="stSidebar"] p,
+[data-testid="stSidebar"] span,
+[data-testid="stSidebar"] div {
+  color: var(--primary-text) !important;
+}
+
+/* Ensure main content area fills available space */
+.main > div:first-child {
+  padding: 0 !important;
+  margin: 0 !important;
+  max-width: 100% !important;
+}
+
+/* Fix for main content area */
+.main > div:first-child > div:first-child {
+  padding: 0 !important;
+  margin: 0 !important;
+  max-width: 100% !important;
+}
+
+/* Fix for form elements inside columns */
+.stForm > div > div > div > div > div {
+  background-color: transparent !important;
+}
+
+/* Form field containers */
+.stForm > div > div {
+  background-color: transparent !important;
+}
+
+/* Form titles and headers */
+.stForm h1,
+.stForm h2,
+.stForm h3,
+.stForm h4,
+.stForm h5,
+.stForm h6 {
+  color: var(--primary-text) !important;
+}
+
+/* Cards and containers */
+.stCard, .stTabs [role="tabpanel"] {
+  background-color: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  box-shadow: var(--card-shadow);
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+  transition: var(--transition);
+}
+
+/* Tables */
+.stDataFrame, .stTable,
+.stDataFrame th, .stTable th,
+.stDataFrame td, .stTable td,
+.stDataFrame tr, .stTable tr,
+.stDataFrame thead, .stTable thead,
+.stDataFrame tbody, .stTable tbody {
+  background-color: var(--card-bg) !important;
+  color: var(--primary-text) !important;
+  border-color: var(--border) !important;
+}
+
+.stDataFrame, .stTable {
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  overflow: hidden;
+  width: 100%;
+}
+
+/* Fix for table headers */
+.stDataFrame th, .stTable th {
+  background-color: var(--tertiary-bg) !important;
+  font-weight: 600 !important;
+  color: var(--primary-text) !important;
+}
+
+/* Fix for table rows */
+.stDataFrame tr:nth-child(even),
+.stTable tr:nth-child(even) {
+  background-color: var(--secondary-bg) !important;
+}
+
+.stDataFrame tr:hover,
+.stTable tr:hover {
+  background-color: var(--tertiary-bg) !important;
+}
+
+.stDataFrame th, .stTable th {
+  background-color: var(--secondary-bg) !important;
+  color: var(--primary-text) !important;
+  font-weight: 600;
+}
+
+.stDataFrame td, .stTable td {
+  border-color: var(--border) !important;
+  color: var(--primary-text) !important;
+}
+
+/* Form elements */
+.stTextInput > div > div > input,
+.stSelectbox > div > div > div,
+.stDateInput > div > div > input,
+.stNumberInput > div > div > input,
+.stTextArea > div > div > textarea {
+  background-color: var(--card-bg) !important;
+  color: var(--primary-text) !important;
+  border-color: var(--border) !important;
+  transition: var(--transition);
+}
+
+.stTextInput > label,
+.stSelectbox > label,
+.stDateInput > label,
+.stNumberInput > label,
+.stTextArea > label {
+  color: var(--primary-text) !important;
+  font-weight: 500;
+}
+
+/* Form field focus states */
+.stTextInput > div > div > input:focus,
+.stSelectbox > div > div > div:focus,
+.stDateInput > div > div > input:focus,
+.stNumberInput > div > div > input:focus,
+.stTextArea > div > div > textarea:focus,
+.stCheckbox > div > div > label > div:focus,
+.stRadio > div > div > label > div:focus {
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 0.2rem rgba(77, 171, 247, 0.25) !important;
+  outline: none !important;
+}
+
+/* Checkbox and Radio buttons */
+.stCheckbox > div > div > label,
+.stRadio > div > div > label {
+  color: var(--primary-text) !important;
+}
+
+.stCheckbox > div > div > label > div,
+.stRadio > div > div > label > div {
+  background-color: var(--card-bg) !important;
+  border-color: var(--border) !important;
+}
+
+.stCheckbox > div > div > label > div[data-testid="stMarkdownContainer"] > p,
+.stRadio > div > div > label > div[data-testid="stMarkdownContainer"] > p {
+  color: var(--primary-text) !important;
+}
+
+/* Sliders */
+.stSlider > div > div > div[data-testid="stThumbValue"] {
+  color: var(--primary-text) !important;
+}
+
+.stSlider > div > div > div[role="slider"] {
+  background-color: var(--accent) !important;
+}
+
+.stSlider > div > div > div[role="slider"]:focus {
+  box-shadow: 0 0 0 0.2rem rgba(77, 171, 247, 0.25) !important;
+}
+
+/* File uploader */
+.stFileUploader > div > div {
+  background-color: var(--card-bg) !important;
+  border-color: var(--border) !important;
+  color: var(--primary-text) !important;
+}
+
+.stFileUploader > div > div:hover {
+  border-color: var(--accent) !important;
+}
+
+.stFileUploader > div > div > div > div > div {
+  color: var(--secondary-text) !important;
+}
+
+/* Tooltips */
+[data-testid="stTooltip"] {
+  background-color: var(--card-bg) !important;
+  color: var(--primary-text) !important;
+  border: 1px solid var(--border) !important;
+}
+
+/* Buttons */
+.stButton > button {
+  background-color: var(--accent) !important;
+  color: white !important;
+  border: 1px solid var(--accent) !important;
+  border-radius: var(--border-radius);
+  transition: var(--transition);
+}
+
+.stButton > button:hover {
+  background-color: var(--accent-hover) !important;
+  border-color: var(--accent-hover) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Tabs */
+.stTabs [role="tablist"] {
+  border-bottom: 1px solid var(--border);
+  background-color: transparent !important;
+}
+
+.stTabs [role="tab"] {
+  color: var(--secondary-text) !important;
+  padding: 0.5rem 1rem !important;
+  margin-right: 0.5rem !important;
+  border-radius: var(--border-radius) var(--border-radius) 0 0 !important;
+  transition: var(--transition) !important;
+  background-color: transparent !important;
+  border: 1px solid transparent !important;
+  border-bottom: none !important;
+  opacity: 0.8;
+}
+
+.stTabs [role="tab"]:hover {
+  color: var(--accent) !important;
+  background-color: var(--secondary-bg) !important;
+  opacity: 1;
+}
+
+.stTabs [aria-selected="true"] {
+  color: var(--accent) !important;
+  background-color: var(--card-bg) !important;
+  border: 1px solid var(--border) !important;
+  border-bottom: 2px solid var(--accent) !important;
+  opacity: 1;
+  position: relative;
+  top: 1px;
+  margin-bottom: -1px;
+  font-weight: 600 !important;
+}
+
+/* Alerts */
+.stAlert {
+  border-left: 4px solid var(--accent);
+  border-radius: 0 var(--border-radius) var(--border-radius) 0;
+  padding: 1rem;
+  margin: 1rem 0;
+  background-color: var(--secondary-bg);
+}
+
+.stAlert-success {
+  border-left-color: var(--success);
+  background-color: var(--success-bg);
+}
+
+.stAlert-info {
+  border-left-color: var(--info);
+  background-color: var(--info-bg);
+}
+
+.stAlert-warning {
+  border-left-color: var(--warning);
+  background-color: var(--warning-bg);
+}
+
+.stAlert-error {
+  border-left-color: var(--danger);
+  background-color: var(--danger-bg);
+}
+
+/* Code blocks */
+pre, code {
+  background-color: var(--code-bg) !important;
+  color: var(--code-text) !important;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.2em 0.4em;
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  font-size: 0.9em;
+}
+
+pre {
+  padding: 1rem;
+  overflow-x: auto;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--secondary-bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--secondary-text);
+}
+
+/* Tooltips */
+.stTooltip {
+  background-color: var(--card-bg) !important;
+  color: var(--primary-text) !important;
+  border: 1px solid var(--border) !important;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  border-radius: var(--border-radius);
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  max-width: 300px;
+}
+
+/* Progress bar */
+.stProgress > div > div > div > div {
+  background-color: var(--accent) !important;
+}
+
+/* Expander */
+.stExpander {
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.stExpander label {
+  font-weight: 600;
+  color: var(--accent) !important;
+}
+
+/* Radio and checkbox */
+.stRadio > label, .stCheckbox > label {
+  color: var(--primary-text) !important;
+}
+
+/* Select dropdown */
+.stSelectbox > div > div > div > div {
+  background-color: var(--card-bg) !important;
+  color: var(--primary-text) !important;
+}
+
+/* File uploader */
+.stFileUploader > label {
+  color: var(--primary-text) !important;
+}
+
+.stFileUploader > div > div {
+  border: 1px dashed var(--border) !important;
+  background-color: var(--secondary-bg) !important;
+  border-radius: var(--border-radius);
+}
+
+.stFileUploader > div > div:hover {
+  border-color: var(--accent) !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .main .block-container {
+    padding: 1rem;
+  }
+  
+  .stCard {
+    padding: 1rem;
+  }
+  
+  [data-testid="stSidebar"] {
+    width: 240px !important;
+  }
+}
+
+/* Print styles */
+@media print {
+  [data-testid="stSidebar"],
+  .stApp > header,
+  .stApp > footer {
+    display: none !important;
+  }
+  
+  .main .block-container {
+    padding: 0;
+    max-width: 100%;
+  }
+  
+  .stAlert {
+    break-inside: avoid;
+  }
+}
+
+/* Animation for theme transition */
+@keyframes fadeIn {
+  from { opacity: 0.8; }
+  to { opacity: 1; }
+}
+
+.stApp {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+/* Fix for Streamlit's inline elements */
+.stMarkdown p, .stMarkdown li {
+  color: var(--primary-text) !important;
+}
+
+/* Fix for Streamlit's data editor */
+.stDataFrame .data {
+  background-color: var(--card-bg) !important;
+}
+
+/* Fix for Streamlit's multiselect */
+.stMultiSelect [role="button"] {
+  background-color: var(--card-bg) !important;
+  color: var(--primary-text) !important;
+  border-color: var(--border) !important;
+}
+
+/* Fix for Streamlit's date input */
+.stDateInput > div > div > input {
+  background-color: var(--card-bg) !important;
+  color: var(--primary-text) !important;
+}
+
+/* Fix for Streamlit's time input */
+.stTimeInput > div > div > input {
+  background-color: var(--card-bg) !important;
+  color: var(--primary-text) !important;
+  border-color: var(--border) !important;
+}
+
+/* Fix for Streamlit's slider */
+.stSlider [data-baseweb="slider"] {
+  color: var(--accent) !important;
+}
+
+.stSlider [data-baseweb="slider"] [role="slider"] {
+  background-color: var(--accent) !important;
+  border-color: var(--accent) !important;
+}
+
+.stSlider [data-baseweb="slider"] [role="slider"]:hover {
+  background-color: var(--accent-hover) !important;
+  border-color: var(--accent-hover) !important;
+}
+
+/* Fix for Streamlit's progress bar */
+.stProgress > div > div > div > div {
+  background-color: var(--accent) !important;
+}
+
+/* Fix for Streamlit's expander */
+.stExpander {
+  background-color: var(--card-bg) !important;
+  border: 1px solid var(--border) !important;
+}
+
+.stExpander label {
+  color: var(--accent) !important;
+}
+
+/* Fix for Streamlit's radio buttons */
+.stRadio > div[role="radiogroup"] > label {
+  color: var(--primary-text) !important;
+}
+
+/* Fix for Streamlit's checkboxes */
+.stCheckbox > label {
+  color: var(--primary-text) !important;
+}
+
+/* Fix for Streamlit's select slider */
+.stSelectSlider [role="slider"] {
+  background-color: var(--accent) !important;
+}
+
+/* Fix for Streamlit's color picker */
+.stColorPicker > div > div > div > input {
+  background-color: var(--card-bg) !important;
+  color: var(--primary-text) !important;
+  border-color: var(--border) !important;
+}
+
+/* Fix for Streamlit's file uploader */
+.stFileUploader > div > div > div {
+  color: var(--primary-text) !important;
+}
+
+/* Fix for Streamlit's info boxes */
+.stAlert {
+  background-color: var(--secondary-bg) !important;
+  border-left: 4px solid var(--accent) !important;
+}
+
+/* Fix for Streamlit's success boxes */
+.stAlert-success {
+  background-color: var(--success-bg) !important;
+  border-left: 4px solid var(--success) !important;
+}
+
+/* Fix for Streamlit's warning boxes */
+.stAlert-warning {
+  background-color: var(--warning-bg) !important;
+  border-left: 4px solid var(--warning) !important;
+}
+
+/* Fix for Streamlit's error boxes */
+.stAlert-error {
+  background-color: var(--danger-bg) !important;
+  border-left: 4px solid var(--danger) !important;
+}
+
+/* Fix for Streamlit's info boxes */
+.stAlert-info {
+  background-color: var(--info-bg) !important;
+  border-left: 4px solid var(--info) !important;
+}
