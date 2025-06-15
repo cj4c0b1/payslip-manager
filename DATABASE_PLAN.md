@@ -47,14 +47,44 @@
 
 #### 5. `magic_tokens`
 - `id` (INTEGER, PK): Unique identifier
-- `email` (VARCHAR(100)): Email the token was sent to
-- `token_hash` (VARCHAR(64)): Hashed token value
+- `email` (VARCHAR(100)): Email address the token was sent to
+- `token_hash` (VARCHAR(64)): Hashed token value (unique)
 - `expires_at` (DATETIME): When the token expires
 - `used` (BOOLEAN): Whether the token has been used
-- `used_at` (DATETIME): When the token was used (nullable)
+- `used_at` (DATETIME, nullable): When the token was used
 - `created_at` (DATETIME): When the token was created
-- `user_agent` (VARCHAR(255)): User agent from the login request
-- `ip_address` (VARCHAR(45)): IP address from the login request
+- `user_agent` (VARCHAR(255), nullable): User agent from the login request
+- `ip_address` (VARCHAR(45), nullable): IP address from the login request
+- **Indexes**:
+  - `idx_magic_token_email` (email)
+  - `idx_magic_token_expires` (expires_at)
+  - `idx_magic_token_used` (used)
+  - `UNIQUE` (token_hash)
+
+## Important Notes
+
+### Migration Guidelines
+1. **Schema Consistency**: Always ensure that the database schema in the models matches the actual database tables.
+2. **Migration Order**: When adding new tables or columns, make sure to:
+   - Update the model definition
+   - Create a new migration
+   - Test the migration on a development database before applying to production
+3. **Common Issues**:
+   - Missing columns (e.g., `used_at` in `magic_tokens`)
+   - Mismatched data types
+   - Missing indexes or constraints
+
+### Recent Issues
+- **2025-06-15**: `magic_tokens` table was missing the `used_at` column which was being referenced in the code. This was fixed by ensuring the model definition matches the database schema.
+  - **Solution**: Added the missing column via migration
+  - **Prevention**: Always run tests after database changes and ensure all model attributes have corresponding database columns.
+
+### Best Practices
+1. Always document schema changes in this file
+2. Test migrations in a development environment first
+3. Keep model definitions in sync with database schema
+4. Use Alembic for all database migrations
+5. Review the `alembic/versions` directory to understand the migration history
 
 ## Indexes
 
