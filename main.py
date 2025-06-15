@@ -2103,7 +2103,6 @@ def main():
     
     # Show login form if not authenticated
     if not st.session_state.authenticated:
-        st.title("🔒 Payslip Manager")
         login_form()
     else:
         main_app()
