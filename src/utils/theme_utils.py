@@ -103,6 +103,9 @@ def set_theme(theme: Literal["light", "dark"]) -> bool:
     """
     Set the theme using Streamlit's native theming.
     
+    This implementation uses a more reliable approach by directly modifying the theme config
+    and using st._config.set_option for better compatibility.
+    
     Args:
         theme: 'light' or 'dark'
         
@@ -111,11 +114,30 @@ def set_theme(theme: Literal["light", "dark"]) -> bool:
     """
     try:
         logger.debug(f"Attempting to set theme to: {theme}")
-        theme_changed = False
+        import streamlit as st
         
-        # First try the new Streamlit theming API (v1.16.0+)
+        # Store in session state first to ensure it's available immediately
+        st.session_state.theme = theme
+        
+        # Save to browser's localStorage for persistence
+        js = f"""
+        <script>
+        try {{
+            localStorage.setItem('theme', '{theme}');
+            document.documentElement.setAttribute('data-theme', '{theme}');
+            console.log('Theme set to: {theme}');
+        }} catch (e) {{
+            console.error('Error setting theme in localStorage:', e);
+        }}
+        </script>
+        """
+        st.components.v1.html(js, height=0, width=0)
+        
+        # Apply theme using Streamlit's internal _config
         try:
+            import streamlit as st
             from streamlit import _config
+            
             if theme == 'dark':
                 _config.set_option('theme.base', 'dark')
                 _config.set_option('theme.backgroundColor', '#1a1a1a')
@@ -128,62 +150,69 @@ def set_theme(theme: Literal["light", "dark"]) -> bool:
                 _config.set_option('theme.primaryColor', '#4a86e8')
                 _config.set_option('theme.secondaryBackgroundColor', '#f0f2f6')
                 _config.set_option('theme.textColor', '#1a1a1a')
-            logger.debug("Theme set using _config.set_option")
-            theme_changed = True
-        except Exception as e:
-            logger.warning(f"Could not use _config.set_option: {e}")
-            # Fall back to direct dictionary access
-            try:
-                config = st.get_option('theme')
-                if theme == 'dark':
-                    config.update({
-                        'base': 'dark',
-                        'backgroundColor': '#1a1a1a',
-                        'primaryColor': '#6eb52f',
-                        'secondaryBackgroundColor': '#2d2d2d',
-                        'textColor': '#ffffff'
-                    })
-                else:
-                    config.update({
-                        'base': 'light',
-                        'backgroundColor': '#ffffff',
-                        'primaryColor': '#4a86e8',
-                        'secondaryBackgroundColor': '#f0f2f6',
-                        'textColor': '#1a1a1a'
-                    })
-                st.set_option('theme', config)
-                logger.debug("Theme set using st.set_option")
-                theme_changed = True
-            except Exception as e:
-                logger.error(f"Could not set theme using st.set_option: {e}")
-                # Continue to fallback theming
-        
-        # Store in session state
-        st.session_state.theme = theme
-        logger.debug(f"Theme preference set to: {theme}")
-        
-        # Only apply fallback if native theming failed
-        if not theme_changed:
-            logger.warning("Falling back to CSS-based theming")
-            _fallback_theme(theme)
+                
+            logger.debug(f"Theme set using _config.set_option: {theme}")
+            return True
             
-        return theme_changed
-        
+        except Exception as e:
+            logger.error(f"Error setting theme with _config: {e}")
+            _fallback_theme(theme)
+            return False
+            
     except Exception as e:
-        logger.error(f"Error setting theme: {e}", exc_info=True)
-        # Fallback to CSS-based theming if native theming fails
+        logger.error(f"Error in set_theme: {e}", exc_info=True)
         _fallback_theme(theme)
+        return False
         return False
 
 def _fallback_theme(theme: str) -> None:
     """Fallback CSS-based theming if native theming fails."""
     try:
+        import streamlit as st
+        
+        # Set data-theme attribute on html element for CSS theming
+        st.markdown(
+            f"""
+            <script>
+            document.documentElement.setAttribute('data-theme', '{theme}');
+            </script>
+            """,
+            unsafe_allow_html=True
+        )
+        
+        # Apply fallback CSS theming
         st.markdown(
             f"""
             <style>
-            .stApp {{
-                background-color: {'#1a1a1a' if theme == 'dark' else '#ffffff'};
-                color: {'#ffffff' if theme == 'dark' else '#1a1a1a'};
+            :root {{
+                --primary: {'#6eb52f' if theme == 'dark' else '#4a86e8'};
+                --background: {'#1a1a1a' if theme == 'dark' else '#ffffff'};
+                --secondary-background: {'#2d2d2d' if theme == 'dark' else '#f0f2f6'};
+                --text: {'#ffffff' if theme == 'dark' else '#1a1a1a'};
+            }}
+            
+            .stApp, .stApp > div[data-testid="stAppViewContainer"] {{
+                background-color: var(--background);
+                color: var(--text);
+            }}
+            
+            .stTextInput > div > div > input,
+            .stSelectbox > div > div > div,
+            .stTextArea > div > div > textarea {{
+                background-color: var(--secondary-background);
+                color: var(--text);
+                border-color: var(--primary);
+            }}
+            
+            .stButton > button {{
+                background-color: var(--primary);
+                color: {'#000000' if theme == 'dark' else '#ffffff'};
+                border: 1px solid var(--primary);
+            }}
+            
+            .stButton > button:hover {{
+                opacity: 0.9;
+                border-color: var(--primary) !important;
             }}
             </style>
             """,
@@ -204,46 +233,61 @@ def render_theme_toggle() -> None:
             
         current_theme = st.session_state.theme
         
-        # Create a container for the button to isolate it
-        with st.sidebar.container():
-            # Add some top margin
-            st.markdown("<div style='margin-top: 10px;'></div>", unsafe_allow_html=True)
+        # Add custom CSS for the toggle button
+        st.markdown(
+            """
+            <style>
+                .theme-toggle {
+                    display: flex;
+                    justify-content: center;
+                    margin: 10px 0;
+                }
+                .theme-toggle button {
+                    background: none;
+                    border: 1px solid var(--primary-color, #4a86e8);
+                    color: var(--text-color, #1a1a1a);
+                    padding: 8px 16px;
+                    border-radius: 4px;
+                    cursor: pointer;
+                    transition: none !important;
+                    width: 100%;
+                }
+                .theme-toggle button:hover {
+                    opacity: 0.9;
+                    transform: none !important;
+                    box-shadow: none !important;
+                }
+                [data-theme="dark"] .theme-toggle button {
+                    border-color: var(--primary-color, #6eb52f);
+                    color: var(--text-color, #ffffff);
+                }
+            </style>
+            """,
+            unsafe_allow_html=True
+        )
+        
+        # Create the toggle button with a form to prevent rerun issues
+        with st.sidebar.form("theme_toggle_form"):
+            # Button to toggle theme
+            button_text = f"{'☀️ Light Mode' if current_theme == 'dark' else '🌙 Dark Mode'}"
             
-            # Create a single column for the button
-            _, col, _ = st.columns([1, 2, 1])
-            
-            with col:
-                # Add custom CSS to prevent hover effects
-                st.markdown(
-                    """
-                    <style>
-                        .stButton>button {
-                            width: 100%;
-                            transition: none !important;
-                        }
-                        .stButton>button:hover {
-                            transform: none !important;
-                            box-shadow: none !important;
-                        }
-                    </style>
-                    """,
-                    unsafe_allow_html=True
-                )
+            # Use a form submit button for better reliability
+            if st.form_submit_button(
+                button_text,
+                use_container_width=True
+            ):
+                # Toggle the theme
+                new_theme = 'dark' if current_theme == 'light' else 'light'
+                # Update theme in session state and apply it
+                set_theme(new_theme)
+                # Force a rerun to apply the theme
+                st.rerun()
                 
-                # Button to toggle theme
-                button_text = f"{'☀️ Light Mode' if current_theme == 'dark' else '🌙 Dark Mode'}"
-                if st.button(button_text, key='theme_toggle_button', use_container_width=True):
-                    # Toggle the theme
-                    new_theme = 'dark' if current_theme == 'light' else 'light'
-                    # Update theme in session state and apply it
-                    st.session_state.theme = new_theme
-                    set_theme(new_theme)
-                    # Force a rerun to apply the theme
-                    st.rerun()
-                            
     except Exception as e:
         logger.error(f"Error in theme toggle: {e}", exc_info=True)
         # Ensure theme is set in session state on error
+        if 'theme' not in st.session_state:
+            st.session_state.theme = 'light'
         st.session_state.setdefault('theme', 'light')
 
 def init_theme() -> None:
@@ -251,9 +295,36 @@ def init_theme() -> None:
     Initialize the theme when the app starts.
     This should be called at the beginning of the app.
     """
-    if 'theme' not in st.session_state:
-        # Default to light theme on first run
-        set_theme('light')
-    else:
-        # Apply the stored theme
+    try:
+        # Initialize theme from session state or browser storage
+        if 'theme' not in st.session_state:
+            # Try to get theme from URL parameters first
+            if 'theme' in st.query_params and st.query_params['theme'] in ['light', 'dark']:
+                st.session_state.theme = st.query_params['theme']
+            else:
+                # Default to light theme if not specified
+                st.session_state.theme = 'light'
+        
+        # Apply the theme
         set_theme(st.session_state.theme)
+        
+        # Add a script to handle theme changes from other tabs/windows
+        st.components.v1.html("""
+        <script>
+        // Listen for storage events to sync theme across tabs
+        window.addEventListener('storage', function(event) {
+            if (event.key === 'theme') {
+                document.documentElement.setAttribute('data-theme', event.newValue);
+            }
+        });
+        
+        // Set initial theme attribute
+        document.documentElement.setAttribute('data-theme', '""" + st.session_state.theme + """');
+        </script>
+        """, height=0, width=0)
+        
+    except Exception as e:
+        logger.error(f"Error initializing theme: {e}", exc_info=True)
+        # Ensure theme is set in session state on error
+        st.session_state.theme = 'light'
+        _fallback_theme('light')
