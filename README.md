@@ -95,6 +95,10 @@ DATABASE_URL=sqlite:///data/payslips.db
 SECRET_KEY=your-secret-key-here
 ```
 
+## Changelog
+
+See the [CHANGELOG.md](CHANGELOG.md) file for a detailed history of changes.
+
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
