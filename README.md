@@ -53,6 +53,12 @@ This project implements several security measures to protect your data:
    pip install -r requirements.txt
    ```
 
+4. For better performance, install the Watchdog module:
+   ```bash
+   xcode-select --install  # Required for Watchdog on macOS
+   pip install watchdog
+   ```
+
 ## Usage
 
 1. Start the Streamlit application:
