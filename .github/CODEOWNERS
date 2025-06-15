@@ -3,7 +3,7 @@
 # Learn more: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
 
 # Default owners for the entire repository
-*       @cj4c0b1 cicero.jacobi@uniberg.com
+*       @cj4c0b1 j4c0b1@gmail.com
 
 # Core application code
 /src/    @cj4c0b1
