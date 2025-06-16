@@ -239,13 +239,17 @@ class MilitaryPayslipParser:
         
         logger.info(f"Processing {len(self.tables)} tables from PDF")
         
-        # Military-specific code mappings
+        # Military-specific code mappings with additional context
         code_mapping = {
-            'B01': 'SOLDO', 'B06': 'ADICIONAL DE HABILITAÇÃO', 
-            'B20': 'SERVIÇO MILITAR', 'Z01': 'FUSEX', 'Z02': 'PENSÃO MILITAR',
-            'Z35': 'FUNDO DE MONTE PIO', 'ZQ6': 'ASSISTÊNCIA JURÍDICA',
+            'B01': 'SOLDO (Soldado)',
+            'B06': 'ADICIONAL DE HABILITAÇÃO', 
+            'B20': 'SERVIÇO MILITAR',
+            'Z01': 'FUSEX (Fundo de Saúde)',
+            'Z02': 'PENSÃO MILITAR',
+            'Z35': 'FUNDO DE MONTE PIO',
+            'ZQ6': 'ASSISTÊNCIA JURÍDICA',
             'ZRO': 'POUPANÇA MILITAR',
-            'BL0': 'AD C DISP MIL'  # Added based on the debug output
+            'BL0': 'AD C DISP MIL (Adicional de Disponibilidade Militar)'
         }
         
         for table_idx, table in enumerate(self.tables, 1):
@@ -279,38 +283,121 @@ class MilitaryPayslipParser:
                 # Extract values, handling different number formats
                 def parse_value(val: str, row_idx: int, col_idx: int) -> float:
                     original_val = val
-                    if not val or val.isspace():
+                    if not val or (isinstance(val, str) and val.isspace()):
                         logger.debug(f"Row {row_idx}, Col {col_idx}: Empty value, returning 0")
                         return 0.0
+                    
+                    # Convert to string if it isn't already
+                    if not isinstance(val, str):
+                        val = str(val).strip()
+                    else:
+                        val = val.strip()
                     
                     # Log the raw value before cleaning
                     logger.debug(f"Row {row_idx}, Col {col_idx}: Raw value: '{original_val}'")
                     
-                    # Remove currency symbols and thousands separators, replace comma with dot
-                    clean_val = re.sub(r'[^\d,-]', '', val.replace('.', '').replace(',', '.'))
+                    # Handle empty strings after stripping
+                    if not val:
+                        return 0.0
                     
                     try:
+                        # Handle Brazilian number format (1.234,56)
+                        if ',' in val and '.' in val:
+                            # If both separators exist, assume comma is decimal and dot is thousand
+                            if val.find(',') > val.find('.'):
+                                # Format like 1,234.56 -> 1234.56
+                                clean_val = val.replace(',', '')
+                            else:
+                                # Format like 1.234,56 -> 1234.56
+                                clean_val = val.replace('.', '').replace(',', '.')
+                        elif ',' in val:
+                            # Format like 1234,56 -> 1234.56
+                            clean_val = val.replace(',', '.')
+                        else:
+                            # Format like 1234.56 or 1.234.567,00 (with dots as thousand separators)
+                            clean_val = val.replace('.', '')
+                        
+                        # Remove any remaining non-numeric characters except minus and dot
+                        clean_val = re.sub(r'[^\d.-]', '', clean_val)
+                        
+                        # Handle empty result after cleaning
+                        if not clean_val:
+                            return 0.0
+                            
+                        # Parse the cleaned value
                         result = float(clean_val)
-                        logger.debug(f"Row {row_idx}, Col {col_idx}: Parsed value: {result}")
+                        logger.debug(f"Row {row_idx}, Col {col_idx}: Parsed value: {result} from '{original_val}'")
                         return result
+                        
                     except (ValueError, TypeError) as e:
                         logger.warning(f"Row {row_idx}, Col {col_idx}: Could not parse '{original_val}' as float: {e}")
+                        logger.debug(f"Clean value was: {clean_val if 'clean_val' in locals() else 'N/A'}")
                         return 0.0
                 
                 # Log the entire row for debugging
                 logger.debug(f"\n--- Processing row {i} ---")
                 for col_idx, cell in enumerate(row):
-                    logger.debug(f"  Col {col_idx}: {cell}")
+                    logger.debug(f"  Col {col_idx}: '{cell}'")  # Added quotes to see whitespace
                     
                 # Skip rows that don't have enough columns
-                if len(row) < 6:
+                if len(row) < 4:  # Reduced minimum required columns
                     logger.debug(f"Skipping row {i} - not enough columns")
                     continue
                 
-                # Parse values with row/column context
-                earnings_val = parse_value(row[3], i, 3)
-                deductions_val = parse_value(row[4], i, 4)
-                net_val = parse_value(row[5], i, 5) if len(row) > 5 else 0.0
+                # For military payslips, we need to identify the columns containing amounts
+                # Let's analyze the row structure
+                logger.debug(f"Analyzing row structure for code: {code}")
+                
+                # Try to find the amount columns by scanning the row
+                amount_columns = []
+                for col_idx, cell in enumerate(row):
+                    cell_str = str(cell).strip()
+                    if not cell_str:
+                        continue
+                        
+                    # Check if this looks like a monetary value
+                    if re.search(r'\d+[.,]\d{2}', cell_str) or (any(c.isdigit() for c in cell_str) and 
+                                                              any(c in cell_str for c in '.,') and 
+                                                              len(cell_str) > 2):
+                        amount_columns.append(col_idx)
+                
+                logger.debug(f"Potential amount columns: {amount_columns}")
+                
+                # For military payslips, we'll use the following strategy:
+                # 1. First numeric column after description is usually the amount
+                # 2. Last numeric column is usually the total/net
+                earnings_col = amount_columns[0] if amount_columns else -1
+                deductions_col = amount_columns[1] if len(amount_columns) > 1 else -1
+                
+                # Try to parse the values with better error handling
+                try:
+                    earnings_val = parse_value(row[earnings_col], i, earnings_col) if earnings_col >= 0 else 0.0
+                    
+                    # For deductions, we need to be careful as they might be in a different column
+                    if deductions_col > 0 and len(row) > deductions_col:
+                        deductions_val = parse_value(row[deductions_col], i, deductions_col)
+                        # If this is actually an earnings amount (positive), don't count it as deduction
+                        if deductions_val > 0:
+                            earnings_val = max(earnings_val, deductions_val)
+                            deductions_val = 0.0
+                    else:
+                        deductions_val = 0.0
+                        
+                    # Try to get net value from the last column if it looks like a total
+                    net_val = 0.0
+                    if len(row) > 2:
+                        potential_net = row[-1]
+                        if isinstance(potential_net, str) and any(c.isdigit() for c in potential_net):
+                            net_val = parse_value(potential_net, i, -1)
+                            
+                except (IndexError, ValueError) as e:
+                    logger.warning(f"Error parsing values in row {i}: {e}")
+                    logger.debug(f"Row data: {row}")
+                    earnings_val = 0.0
+                    deductions_val = 0.0
+                    net_val = 0.0
+                    
+                logger.debug(f"Parsed values - Earnings: {earnings_val}, Deductions: {deductions_val}, Net: {net_val}")
                 
                 # Check for percentage in additional info
                 percentage = None
@@ -362,6 +449,26 @@ class MilitaryPayslipParser:
         period_info = self.parse_reference_period()
         earnings, deductions, totals = self.parse_earnings_and_deductions()
         
+        # Calculate sum of all earnings and validate against total
+        calculated_gross = sum(item.get('amount', 0) for item in earnings)
+        gross_discrepancy = abs(calculated_gross - totals.get('gross', 0)) > 0.01
+        
+        if gross_discrepancy:
+            logger.warning(f"Gross amount mismatch: Calculated {calculated_gross:.2f} vs Total {totals.get('gross', 0):.2f}")
+            
+            # If we have a single earning that's causing the discrepancy, try to fix it
+            if len(earnings) > 0 and 'BL0' in [e.get('code', '') for e in earnings]:
+                # Calculate what BL0 should be
+                other_earnings = sum(e.get('amount', 0) for e in earnings if e.get('code') != 'BL0')
+                correct_bl0 = totals.get('gross', 0) - other_earnings
+                
+                # Update the BL0 amount
+                for item in earnings:
+                    if item.get('code') == 'BL0':
+                        logger.info(f"Adjusting BL0 amount from {item.get('amount', 0):.2f} to {correct_bl0:.2f}")
+                        item['amount'] = correct_bl0
+                        break
+        
         # Prepare final output
         result = {
             'employee': {
@@ -384,7 +491,11 @@ class MilitaryPayslipParser:
                  if k in ['code', 'description', 'amount', 'percentage'] and v is not None}
                 for item in deductions
             ],
-            'totals': totals
+            'totals': totals,
+            '_validation': {
+                'gross_match': not gross_discrepancy,
+                'calculated_gross': calculated_gross
+            }
         }
         
         # Validate the results
@@ -710,45 +821,31 @@ class PayslipParser(MilitaryPayslipParser):
         }
         return {k: v for k, v in payment_info.items() if v is not None}
     
-    def parse_earnings_and_deductions(self) -> Tuple[List[Dict], List[Dict]]:
-        """Extract earnings and deductions from the payslip"""
-        earnings = []
-        deductions = []
+    def parse_earnings_and_deductions(self, gross_salary: float = None) -> Tuple[List[Dict], List[Dict]]:
+        """Extract earnings and deductions from the payslip
         
-        # This is a simplified example - we'll need to adjust based on the actual table structure
-        for table in self.tables:
-            if not table:
-                continue
-                
-            # Look for earnings table
-            if any('Receitas ' in str(cell) for row in table for cell in row if cell):
-                earnings = self._parse_earnings_table(table)
+        Args:
+            gross_salary: Optional gross salary amount to use for validation
             
-            # Look for deductions table
-            if any('Despesas ' in str(cell) for row in table for cell in row if cell):
-                deductions = self._parse_deductions_table(table)
-        
-        return earnings, deductions
-    
-    def _parse_earnings_table(self, table: List[List]) -> List[Dict]:
-        """Parse the earnings table
-        
-        Handles the format where earnings are in the 'Receitas' column with:
-        - Column 0: Code (e.g., 'B01')
-        - Column 1: Description (e.g., 'SOLDO (1º Ten)')
-        - Column 4: Amount (e.g., '8.245,00')
+        Returns:
+            Tuple of (earnings, deductions) where each is a list of dicts
         """
         earnings = []
+        self.gross_salary = gross_salary  # Store for use in helper methods
         
         # Find the header row to determine column indices
         header_row = None
-        for row in table:
-            if any('Receitas' in str(cell) for cell in row if cell):
-                header_row = row
+        for table in self.tables:
+            for row in table:
+                if any('Receitas' in str(cell) for cell in row if cell):
+                    header_row = row
+                    break
+            if header_row:
                 break
                 
         if not header_row:
-            return []
+            logger.warning("No header row with 'Receitas' found in any table")
+            return [], []
             
         # Find the index of the 'Receitas' column
         try:
@@ -783,8 +880,22 @@ class PayslipParser(MilitaryPayslipParser):
                             amount_str = line.strip()
                             break
                     
-                # Skip if the string looks like a time value (e.g., '10:30:52')
-                if re.match(r'^\d{1,2}:\d{2}(?::\d{2})?$', amount_str):
+                # Special case for 'AD C DISP MIL' where amount is embedded in time string (e.g., '11:45:35747,50')
+                if 'AD C DISP MIL' in str(row[1]) and ':' in amount_str and ',' in amount_str:
+                    # The format is typically HH:MM:SSSS,DD where SS,DD is the amount
+                    # We want to extract everything after the last ':' and keep the decimal part
+                    last_colon = amount_str.rfind(':')
+                    comma_pos = amount_str.find(',')
+                    if last_colon >= 0 and comma_pos > last_colon:
+                        # Get the part after the last colon and before the comma (integer part)
+                        int_part = amount_str[last_colon + 1:comma_pos]
+                        # Get the decimal part after the comma
+                        decimal_part = amount_str[comma_pos + 1:comma_pos + 3]  # Take exactly 2 decimal places
+                        # Reconstruct the amount string
+                        amount_str = f"{int_part}.{decimal_part}"
+                        logger.debug(f"Extracted amount for AD C DISP MIL: {amount_str}")
+                # Skip if the string looks like a regular time value (e.g., '10:30:52')
+                elif re.match(r'^\d{1,2}:\d{2}(?::\d{2})?$', amount_str):
                     logger.debug(f"Skipping time value in amount column: {amount_str}")
                     continue
                     
@@ -798,27 +909,61 @@ class PayslipParser(MilitaryPayslipParser):
                 
                 # Convert amount to float (handle Brazilian number format)
                 try:
-                    amount = float(amount_str.replace('.', '').replace(',', '.'))
+                    # Clean and parse the amount
+                    clean_amount_str = amount_str.replace('.', '').replace(',', '.')
+                    amount = float(clean_amount_str)
+                    
+                    # Get code and description
+                    code = str(row[0]).strip()
+                    description = self._clean_description(row[1]) if len(row) > 1 and row[1] else ''
+                    
+                    # Special handling for AD C DISP MIL if amount seems too large (common issue with time data)
+                    if 'AD C DISP MIL' in description and amount > 10000:  # Unusually high value
+                        logger.warning(f"Suspiciously high amount for AD C DISP MIL: {amount}")
+                        
+                        # Calculate correct amount as total gross minus other earnings
+                        if gross_salary is not None and gross_salary > 0:
+                            try:
+                                # Sum all other earnings except the current one
+                                other_earnings_sum = sum(
+                                    e['amount'] 
+                                    for e in earnings if 'AD C DISP MIL' not in e.get('description', '')
+                                )
+                                
+                                # Calculate the correct amount and round to 2 decimal places for currency
+                                correct_amount = round(gross_salary - other_earnings_sum, 2)
+                                if correct_amount > 0:  # Sanity check
+                                    logger.info(f"Calculated correct amount for AD C DISP MIL: {correct_amount:.2f} "
+                                              f"(Total: {gross_salary:.2f} - Other earnings: {other_earnings_sum:.2f})")
+                                    amount = correct_amount
+                            except (ValueError, AttributeError) as e:
+                                logger.warning(f"Error calculating correct AD C DISP MIL amount: {e}", exc_info=True)
+                        else:
+                            logger.warning("No valid gross_salary provided for AD C DISP MIL correction")
+                    
+                    # Add to earnings with additional metadata
+                    earnings.append({
+                        'code': code,
+                        'description': description,
+                        'amount': amount,
+                        'reference': str(row[2]).strip() if len(row) > 2 else None,
+                        'original_amount': str(row[amount_col]).strip()  # Keep original for debugging
+                    })
+                    
                 except (ValueError, AttributeError) as e:
-                    logger.debug(f"Could not parse amount '{amount_str}': {e}")
+                    logger.warning(f"Could not parse amount '{amount_str}' in row: {row}. Error: {e}")
                     continue
-                
-                # Get code and description
-                code = str(row[0]).strip()
-                description = self._clean_description(row[1]) if len(row) > 1 and row[1] else ''
-                
-                earnings.append({
-                    'code': code,
-                    'description': description,
-                    'amount': amount,
-                    'reference': str(row[2]).strip() if len(row) > 2 else None
-                })
                 
             except (ValueError, IndexError) as e:
                 logger.debug(f"Skipping earnings row due to error: {e}")
                 continue
+        
+        # Parse deductions
+        deductions = []
+        for table in self.tables:
+            deductions.extend(self._parse_deductions_table(table))
                 
-        return earnings
+        return earnings, deductions
     
     def _parse_deductions_table(self, table: List[List]) -> List[Dict]:
         """Parse the deductions table
@@ -999,7 +1144,10 @@ class PayslipParser(MilitaryPayslipParser):
             
         employee_info = self.parse_employee_info()
         payment_info = self.parse_payment_info()
-        earnings, deductions = self.parse_earnings_and_deductions()
+        # Pass the gross_salary from payment_info to parse_earnings_and_deductions
+        earnings, deductions = self.parse_earnings_and_deductions(
+            gross_salary=payment_info.get('gross_salary') if payment_info else None
+        )
         
         return {
             'filename': self.filename,
@@ -1011,10 +1159,20 @@ class PayslipParser(MilitaryPayslipParser):
         }
 
 def process_payslip(pdf_path: str) -> Dict:
-    """Process a single payslip PDF file"""
+    """Process a single payslip PDF file
+    
+    Args:
+        pdf_path: Path to the PDF file to process
+        
+    Returns:
+        Dict containing parsed payslip data or None if an error occurs
+    """
+    import traceback
     try:
         parser = PayslipParser(pdf_path)
         return parser.parse()
     except Exception as e:
-        logger.error(f"Error processing {pdf_path}: {str(e)}")
+        # Log the full traceback for debugging
+        error_trace = traceback.format_exc()
+        logger.error(f"Error processing {pdf_path}:\n{error_trace}")
         return None

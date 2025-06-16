@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Fixed
+- **Earnings Parsing**
+  - Fixed `parse_earnings_and_deductions` to correctly return tuple of (earnings, deductions)
+  - Improved handling of malformed numeric data in earnings, especially for "AD C DISP MIL"
+  - Added fallback calculation for correct earnings amount when parsing fails
+  
+- **Date Handling**
+  - Fixed duplicate check warning message to handle both date objects and date strings
+  - Added robust error handling for date formatting in warning messages
+  - Improved logging for date parsing issues
+
 ### Added
 - **Security Enhancements**
   - Added SECURITY.md with vulnerability reporting guidelines
