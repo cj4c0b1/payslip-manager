@@ -1,5 +1,10 @@
 # Payslip Management System
 
+[![Security](https://img.shields.io/badge/security-enabled-brightgreen)](SECURITY.md)
+[![CodeQL](https://github.com/yourusername/payslip-manager/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/yourusername/payslip-manager/actions/workflows/codeql-analysis.yml)
+
+A Streamlit-based application for managing and analyzing employee payslips in PDF format. The system allows users to upload, store, and visualize payslip data with various reporting capabilities.
+
 A Streamlit-based application for managing and analyzing employee payslips in PDF format. The system allows users to upload, store, and visualize payslip data with various reporting capabilities.
 
 ## Features
@@ -18,6 +23,17 @@ A Streamlit-based application for managing and analyzing employee payslips in PD
 - **Audit Logging**: Track all authentication events and sensitive operations
 - **Data Encryption**: Sensitive data encrypted at rest and in transit
 
+## Security Features
+
+This project implements several security measures to protect your data:
+
+- **Security Policy**: Clear guidelines for reporting vulnerabilities ([SECURITY.md](SECURITY.md))
+- **Dependency Scanning**: Automated monitoring for vulnerable dependencies
+- **Code Analysis**: Static code analysis with CodeQL to detect security issues
+- **Secret Scanning**: Automatic detection of exposed secrets in commits
+- **Private Vulnerability Reporting**: Secure channel for reporting security issues
+- **Regular Updates**: Dependencies are automatically kept up-to-date
+
 ## Installation
 
 1. Clone the repository:
@@ -35,6 +51,12 @@ A Streamlit-based application for managing and analyzing employee payslips in PD
 3. Install the required packages:
    ```bash
    pip install -r requirements.txt
+   ```
+
+4. For better performance, install the Watchdog module:
+   ```bash
+   xcode-select --install  # Required for Watchdog on macOS
+   pip install watchdog
    ```
 
 ## Usage

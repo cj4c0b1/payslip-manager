@@ -1,23 +1,26 @@
 # Core dependencies
-streamlit==1.32.0
+streamlit==1.37.0  # Updated from 1.32.0 to address CVE
 pandas==2.1.4
 numpy==1.26.4
 python-dotenv==1.0.0
 
 # Authentication
-python-jose[cryptography]==3.3.0
+python-jose[cryptography]==3.4.0  # Updated from 3.3.0 to address critical CVE
 passlib[bcrypt]==1.7.4
-python-multipart==0.0.6
+bcrypt==4.1.2  # Pinned to fix bcrypt version warning
+python-multipart==0.0.18  # Updated from 0.0.6 to address high severity CVE
 email-validator==2.1.0.post1
+
+# Data Validation
+pydantic==2.10.1  # Required for data validation in auth schemas
 
 # Database
 SQLAlchemy==2.0.25
 alembic==1.13.1
 
 # Security
-cryptography==42.0.5
+cryptography==44.0.1  # Updated from 42.0.5 to address medium/low severity CVEs
 PyJWT==2.8.0
-python-jose[cryptography]==3.3.0
 
 # PDF Processing
 PyPDF2==3.0.1
@@ -25,6 +28,12 @@ pdfplumber==0.10.3
 
 # Data Visualization
 plotly==5.18.0
+
+# API
+fastapi==0.111.0
+uvicorn==0.29.0
+starlette==0.37.2
+httpx==0.28.1
 
 # Email
 aiosmtplib>=2.0.0
@@ -42,6 +51,7 @@ pylint==3.0.3
 pytest==7.4.4
 pytest-cov==4.1.0
 pytest-mock==3.12.0
+watchdog==3.0.0
 
 # Excel
 xlsxwriter==3.1.9

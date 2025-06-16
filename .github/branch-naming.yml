@@ -1,0 +1,74 @@
+# Branch naming configuration
+# This file defines the naming conventions for branches in this repository
+
+# Default branch protection applies to all branches unless overridden
+default:
+  # Branch name patterns that are allowed
+  # - feature/*: Feature branches
+  # - bugfix/*: Bug fix branches
+  # - hotfix/*: Hotfix branches (for production fixes)
+  # - release/*: Release preparation branches
+  # - dependabot/**/*: Dependabot update branches
+  allowed_patterns:
+    - '^feature/.*$'
+    - '^bugfix/.*$'
+    - '^hotfix/.*$'
+    - '^release/.*$'
+    - '^dependabot/.*$'
+    - '^main$'
+    - '^develop$'
+
+  # Branch name patterns that are not allowed
+  # - No direct commits to main or develop
+  # - No branches with 'master' in the name
+  # - No branches with 'dev' or 'prod' in the name (too generic)
+  # - No branches with special characters except hyphens and underscores
+  blocked_patterns:
+    - '^master$'
+    - '.*master.*'
+    - '.*dev$'
+    - '.*prod$'
+    - '.*[~^:?*\[\]@{}].*'  # No special characters
+
+  # Branch name length limits
+  min_length: 3
+  max_length: 50
+
+  # Branch name requirements
+  require_lowercase: true
+  allow_uppercase: false
+  allow_numbers: true
+  allow_hyphens: true
+  allow_underscores: true
+  allow_slashes: true  # For feature/branch-name format
+
+# Override settings for specific branches
+overrides:
+  main:
+    # Only allow merges from protected branches (like develop or release/*)
+    allowed_merge_from:
+      - 'develop'
+      - 'release/.*'
+    # Require pull requests for all changes
+    require_pull_request: true
+    # Required number of approvals before merging
+    required_approvals: 1
+    # Dismiss stale approvals when new commits are pushed
+    dismiss_stale_reviews: true
+    # Required status checks must pass before merging
+    required_status_checks:
+      - 'CodeQL'
+      - 'test'
+
+  develop:
+    # Allow merges from feature, bugfix, and hotfix branches
+    allowed_merge_from:
+      - 'feature/.*'
+      - 'bugfix/.*'
+      - 'hotfix/.*'
+    require_pull_request: true
+    required_approvals: 1
+    dismiss_stale_reviews: true
+    required_status_checks:
+      - 'CodeQL'
+      - 'test'

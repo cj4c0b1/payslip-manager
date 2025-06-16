@@ -1,0 +1,31 @@
+# This file defines who is automatically requested for review when changes
+# are pushed to specific directories or files in the repository.
+# Learn more: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default owners for the entire repository
+*       @cj4c0b1 j4c0b1@gmail.com
+
+# Core application code
+/src/    @cj4c0b1
+
+# Documentation
+/docs/   @cj4c0b1
+
+# GitHub Actions workflows
+/.github/workflows/ @cj4c0b1
+
+# Configuration files
+*.yml    @cj4c0b1
+*.yaml   @cj4c0b1
+*.json   @cj4c0b1
+
+# Security-related files
+SECURITY.md @cj4c0b1
+*.pem     @cj4c0b1
+*.key     @cj4c0b1
+*.cert    @cj4c0b1
+
+# Dependencies
+package.json  @cj4c0b1
+package-lock.json  @cj4c0b1
+requirements.txt  @cj4c0b1

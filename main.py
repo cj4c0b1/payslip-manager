@@ -115,42 +115,10 @@ def login_form() -> bool:
     st.title("🔒 Payslip Manager Login")
     st.markdown("Please sign in with your credentials or request a magic link.")
     
-    # Create tabs for different login methods
-    tab1, tab2 = st.tabs(["Sign In with Password", "Sign In with Magic Link"])
+    # Create tabs for different login methods - Magic Link is now the default first tab
+    tab1, tab2 = st.tabs(["Sign In with Magic Link", "Sign In with Password"])
     
     with tab1:
-        with st.form("password_login_form", clear_on_submit=True):
-            st.subheader("Sign In with Password")
-            
-            # Username and password fields
-            col1, col2 = st.columns([1, 1])
-            with col1:
-                username = st.text_input("Username", key="login_username", placeholder="Enter your username")
-            with col2:
-                password = st.text_input("Password", type="password", key="login_password", placeholder="Enter your password")
-            
-            # Login button
-            submitted = st.form_submit_button("Sign In", type="primary", use_container_width=True)
-            
-            # Handle form submission
-            if submitted:
-                if not username or not password:
-                    st.error("Please enter both username and password")
-                    logger.warning("Login attempt with empty username or password")
-                    return False
-                    
-                logger.info(f"Password login attempt for user: {username}")
-                
-                if authenticate_user(username, password):
-                    st.session_state.authenticated = True
-                    st.session_state.username = username
-                    logger.info(f"User {username} authenticated successfully")
-                    st.rerun()
-                else:
-                    st.error("❌ Invalid username or password")
-                    logger.warning(f"Failed password login attempt for user: {username}")
-    
-    with tab2:
         with st.form("magic_link_form", clear_on_submit=True):
             st.subheader("Sign In with Magic Link")
             st.info("Enter your email address and we'll send you a secure login link.")
@@ -158,7 +126,7 @@ def login_form() -> bool:
             email = st.text_input("Email Address", key="magic_link_email", 
                                 placeholder="your.email@example.com")
             
-            submitted = st.form_submit_button("Send Magic Link", type="secondary", use_container_width=True)
+            submitted = st.form_submit_button("Send Magic Link", type="primary", use_container_width=True)
             
             if submitted:
                 if not email:
@@ -197,6 +165,38 @@ def login_form() -> bool:
                     st.error(f"❌ An error occurred: {str(e)}")
                     logger.error(f"Error sending magic link to {email}: {str(e)}", exc_info=True)
     
+    with tab2:
+        with st.form("password_login_form", clear_on_submit=True):
+            st.subheader("Sign In with Password")
+            
+            # Username and password fields
+            col1, col2 = st.columns([1, 1])
+            with col1:
+                username = st.text_input("Username", key="login_username", placeholder="Enter your username")
+            with col2:
+                password = st.text_input("Password", type="password", key="login_password", placeholder="Enter your password")
+            
+            # Login button
+            submitted = st.form_submit_button("Sign In", type="secondary", use_container_width=True)
+            
+            # Handle form submission
+            if submitted:
+                if not username or not password:
+                    st.error("Please enter both username and password")
+                    logger.warning("Login attempt with empty username or password")
+                    return False
+                    
+                logger.info(f"Password login attempt for user: {username}")
+                
+                if authenticate_user(username, password):
+                    st.session_state.authenticated = True
+                    st.session_state.username = username
+                    logger.info(f"User {username} authenticated successfully")
+                    st.rerun()
+                else:
+                    st.error("❌ Invalid username or password")
+                    logger.warning(f"Failed password login attempt for user: {username}")
+    
     # Add some spacing and a divider
     st.markdown("---")
     
@@ -209,13 +209,6 @@ def login_form() -> bool:
     
     # Add some spacing and a divider
     st.markdown("---")
-    
-    # Add a note about secure login
-    st.markdown("""
-    <div style='font-size: 0.9em; color: #666; text-align: center;'>
-        For security reasons, please log out when you're done.
-    </div>
-    """, unsafe_allow_html=True)
     
     return False
 
@@ -2071,11 +2064,16 @@ def verify_magic_link(token: str) -> bool:
             logger.info(f"Token verification result: is_valid={is_valid}, user_data={user_data}")
             
             if is_valid and user_data:
-                st.session_state.authenticated = True
-                st.session_state.username = user_data.get('email', 'user')
-                logger.info(f"User {st.session_state.username} authenticated successfully via magic link")
-                st.toast("✅ Successfully logged in with magic link!")
-                st.rerun()
+                # Only update session state if not already authenticated
+                if not st.session_state.get('authenticated'):
+                    st.session_state.authenticated = True
+                    st.session_state.username = user_data.get('email', 'user')
+                    logger.info(f"User {st.session_state.username} authenticated successfully via magic link")
+                    st.toast("✅ Successfully logged in with magic link!")
+                    # Set flag and clear the token from URL
+                    st.session_state['magic_link_verified'] = True
+                    # Clear the token from URL without triggering a rerun
+                    st.query_params.clear()
                 return True
             else:
                 error_msg = "Invalid or expired magic link. Please request a new one."
@@ -2098,12 +2096,22 @@ def main():
     # Check for magic link token in URL
     token = st.query_params.get("token")
     if token and not st.session_state.authenticated:
+        # Clear the token from URL first to prevent loops
+        st.query_params.clear()
         verify_magic_link(token)
-        return  # Wait for rerun
     
-    # Show login form if not authenticated
+    # Check if we just verified a magic link
+    if st.session_state.get('magic_link_verified', False):
+        st.session_state.pop('magic_link_verified', None)  # Clean up
+        st.session_state.authenticated = True  # Ensure authenticated is set
+        # Small delay to allow the UI to update
+        import time
+        time.sleep(0.5)
+        st.rerun()
+        return
+    
+    # Show login form if not authenticated, otherwise show the app
     if not st.session_state.authenticated:
-        st.title("🔒 Payslip Manager")
         login_form()
     else:
         main_app()
