@@ -119,38 +119,6 @@ def login_form() -> bool:
     tab1, tab2 = st.tabs(["Sign In with Magic Link", "Sign In with Password"])
     
     with tab1:
-        with st.form("password_login_form", clear_on_submit=True):
-            st.subheader("Sign In with Password")
-            
-            # Username and password fields
-            col1, col2 = st.columns([1, 1])
-            with col1:
-                username = st.text_input("Username", key="login_username", placeholder="Enter your username")
-            with col2:
-                password = st.text_input("Password", type="password", key="login_password", placeholder="Enter your password")
-            
-            # Login button
-            submitted = st.form_submit_button("Sign In", type="primary", use_container_width=True)
-            
-            # Handle form submission
-            if submitted:
-                if not username or not password:
-                    st.error("Please enter both username and password")
-                    logger.warning("Login attempt with empty username or password")
-                    return False
-                    
-                logger.info(f"Password login attempt for user: {username}")
-                
-                if authenticate_user(username, password):
-                    st.session_state.authenticated = True
-                    st.session_state.username = username
-                    logger.info(f"User {username} authenticated successfully")
-                    st.rerun()
-                else:
-                    st.error("❌ Invalid username or password")
-                    logger.warning(f"Failed password login attempt for user: {username}")
-    
-    with tab2:
         with st.form("magic_link_form", clear_on_submit=True):
             st.subheader("Sign In with Magic Link")
             st.info("Enter your email address and we'll send you a secure login link.")
@@ -158,7 +126,7 @@ def login_form() -> bool:
             email = st.text_input("Email Address", key="magic_link_email", 
                                 placeholder="your.email@example.com")
             
-            submitted = st.form_submit_button("Send Magic Link", type="secondary", use_container_width=True)
+            submitted = st.form_submit_button("Send Magic Link", type="primary", use_container_width=True)
             
             if submitted:
                 if not email:
@@ -196,6 +164,38 @@ def login_form() -> bool:
                 except Exception as e:
                     st.error(f"❌ An error occurred: {str(e)}")
                     logger.error(f"Error sending magic link to {email}: {str(e)}", exc_info=True)
+    
+    with tab2:
+        with st.form("password_login_form", clear_on_submit=True):
+            st.subheader("Sign In with Password")
+            
+            # Username and password fields
+            col1, col2 = st.columns([1, 1])
+            with col1:
+                username = st.text_input("Username", key="login_username", placeholder="Enter your username")
+            with col2:
+                password = st.text_input("Password", type="password", key="login_password", placeholder="Enter your password")
+            
+            # Login button
+            submitted = st.form_submit_button("Sign In", type="secondary", use_container_width=True)
+            
+            # Handle form submission
+            if submitted:
+                if not username or not password:
+                    st.error("Please enter both username and password")
+                    logger.warning("Login attempt with empty username or password")
+                    return False
+                    
+                logger.info(f"Password login attempt for user: {username}")
+                
+                if authenticate_user(username, password):
+                    st.session_state.authenticated = True
+                    st.session_state.username = username
+                    logger.info(f"User {username} authenticated successfully")
+                    st.rerun()
+                else:
+                    st.error("❌ Invalid username or password")
+                    logger.warning(f"Failed password login attempt for user: {username}")
     
     # Add some spacing and a divider
     st.markdown("---")
