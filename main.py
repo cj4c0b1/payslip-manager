@@ -115,8 +115,8 @@ def login_form() -> bool:
     st.title("🔒 Payslip Manager Login")
     st.markdown("Please sign in with your credentials or request a magic link.")
     
-    # Create tabs for different login methods
-    tab1, tab2 = st.tabs(["Sign In with Password", "Sign In with Magic Link"])
+    # Create tabs for different login methods - Magic Link is now the default first tab
+    tab1, tab2 = st.tabs(["Sign In with Magic Link", "Sign In with Password"])
     
     with tab1:
         with st.form("password_login_form", clear_on_submit=True):
