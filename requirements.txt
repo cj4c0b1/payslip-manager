@@ -71,4 +71,4 @@ asgiref==3.7.2
 
 # Utilities
 python-slugify==8.0.1
-python-multipart==0.0.6
+python-multipart==0.0.18
