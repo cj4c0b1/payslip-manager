@@ -32,7 +32,7 @@ plotly==5.18.0
 # API
 fastapi==0.111.0
 uvicorn==0.29.0
-starlette==0.37.2
+starlette==0.40.0
 httpx==0.28.1
 
 # Email
