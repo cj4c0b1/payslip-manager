@@ -53,3 +53,4 @@ data/
 sensitive_data/
 .streamlit/secrets.toml
 testdata/
+.windsurf/
