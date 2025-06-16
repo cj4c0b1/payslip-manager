@@ -3,6 +3,7 @@ import base64
 import hashlib
 import hmac
 import streamlit as st
+from pathlib import Path
 from sqlalchemy.exc import SQLAlchemyError
 
 # Set page config must be the first Streamlit command
@@ -650,25 +651,34 @@ class PayslipManager:
             try:
                 # Process the payslip
                 with st.spinner(f"Processing {file_name}..."):
+                    # Process the payslip data
                     payslip_data = process_payslip(file_path)
                     if not payslip_data:
                         results['skipped'].append((file_name, "Failed to parse payslip"))
                         st.warning(f"⚠️ Could not parse {file_name}")
                         continue
-
+                    
                     # Save to database using a new session
                     with self.get_session() as session:
                         try:
+                            # Save the payslip data to the database
                             success = self._save_to_database(session, payslip_data)
                             if not success:
                                 results['skipped'].append((file_name, "Database save failed"))
                                 st.error(f"❌ Failed to save {file_name} to database")
                                 continue
-                                
-                            # Commit the transaction
-                            session.commit()
-                            results['success'].append(file_name)
-                            results['processed'] += 1
+                            
+                            # Get the payslip we just saved to update its file_path
+                            from src.models.payslip import Payslip
+                            payslip = session.query(Payslip).filter_by(
+                                original_filename=os.path.basename(file_path)
+                            ).order_by(Payslip.id.desc()).first()
+                            
+                            if not payslip:
+                                session.rollback()
+                                results['skipped'].append((file_name, "Could not find saved payslip to update file path"))
+                                st.error(f"❌ Could not find saved payslip for {file_name}")
+                                continue
                             
                             # Move processed file to archive
                             archive_dir = self.upload_dir / "processed"
@@ -683,10 +693,27 @@ class PayslipManager:
                             dest_path = timestamp_dir / os.path.basename(file_path)
                             shutil.move(file_path, dest_path)
                             
+                            # Update the payslip with the relative file path
+                            # Use the application's base directory for consistent path handling
+                            app_base_dir = Path(__file__).parent.absolute()
+                            try:
+                                # Try to make the path relative to the app base directory
+                                relative_path = str(dest_path.relative_to(app_base_dir))
+                            except ValueError:
+                                # If the paths are on different drives (Windows) or can't be made relative,
+                                # store the absolute path as a fallback
+                                relative_path = str(dest_path.absolute())
+                            
+                            # Ensure we're using forward slashes for consistency across platforms
+                            relative_path = relative_path.replace('\\', '/')
+                            payslip.file_path = relative_path
+                            session.commit()
+                            
+                            results['success'].append(file_name)
+                            results['processed'] += 1
                             st.success(f"✅ Successfully processed {file_name}")
                             
                         except Exception as db_error:
-                            # Rollback on error
                             session.rollback()
                             error_msg = str(db_error)
                             results['skipped'].append((file_name, f"Database error: {error_msg}"))
@@ -904,9 +931,23 @@ class PayslipManager:
             ).first()
             
             if existing_payslip:
+                # Safely format the reference month
+                ref_month = payment_info.get('reference_month')
+                try:
+                    if hasattr(ref_month, 'strftime'):
+                        # It's already a date/datetime object
+                        formatted_date = ref_month.strftime('%B %Y')
+                    else:
+                        # Try to parse the string date
+                        date_obj = datetime.strptime(str(ref_month), '%Y-%m-%d')
+                        formatted_date = date_obj.strftime('%B %Y')
+                except (ValueError, AttributeError):
+                    # Fallback to raw string if parsing fails
+                    formatted_date = str(ref_month)
+                
                 st.warning(
                     f"⚠️ Payslip for {employee.first_name} {employee.last_name} "
-                    f"({payment_info['reference_month'].strftime('%B %Y')}) already exists. Skipping..."
+                    f"({formatted_date}) already exists. Skipping..."
                 )
                 return False
 
@@ -964,7 +1005,8 @@ class PayslipManager:
 
             # Add earnings with validation
             total_earnings = 0
-            for earning in payslip_data.get('earnings', []):
+            earnings_data = payment_info.get('earnings', payslip_data.get('earnings', []))
+            for earning in earnings_data:
                 if not isinstance(earning, dict) or 'description' not in earning or 'amount' not in earning:
                     continue
                     
@@ -972,30 +1014,27 @@ class PayslipManager:
                     amount = float(earning['amount'])
                     total_earnings += amount
                     
-                    # Get category and tax status from earning data or use defaults
-                    category = earning.get('category', 'salary')
-                    is_taxable = earning.get('is_taxable', True)
-                    quantity = earning.get('quantity', 1.0)
-                    rate = earning.get('rate')
-                    
+                    # Create earning with only valid fields
                     earn = Earning(
                         payslip_id=payslip.id,
-                        category=category,
+                        earning_type=earning.get('code', Earning.TYPE_REGULAR),
                         description=earning['description'].strip(),
-                        reference=earning.get('reference', '').strip(),
                         amount=amount,
-                        is_taxable=is_taxable,
-                        quantity=quantity,
-                        rate=rate
+                        is_taxable=earning.get('is_taxable', True),
+                        quantity=earning.get('quantity', 1.0),
+                        rate=earning.get('rate')
                     )
                     session.add(earn)
+                    logger.debug(f"Added earning: {earn.description} - {earn.amount}")
                 except (ValueError, TypeError) as e:
                     st.warning(f"⚠️ Invalid earning data: {earning}. Error: {str(e)}")
+                    logger.error(f"Error processing earning: {earning}", exc_info=True)
                     continue
 
             # Add deductions with validation
             total_deductions = 0
-            for deduction in payslip_data.get('deductions', []):
+            deductions_data = payment_info.get('deductions', payslip_data.get('deductions', []))
+            for deduction in deductions_data:
                 if not isinstance(deduction, dict) or 'description' not in deduction or 'amount' not in deduction:
                     continue
                     
@@ -1003,24 +1042,20 @@ class PayslipManager:
                     amount = float(deduction['amount'])
                     total_deductions += amount
                     
-                    # Get category and tax status from deduction data or use defaults
-                    category = deduction.get('category', 'other')
-                    is_tax = deduction.get('is_tax', False)
-                    is_pretax = deduction.get('is_pretax', False)
-                    
+                    # Create deduction with only valid fields
                     ded = Deduction(
                         payslip_id=payslip.id,
-                        category=category,
+                        deduction_type=deduction.get('code', Deduction.TYPE_OTHER),
                         description=deduction['description'].strip(),
-                        reference=deduction.get('reference', '').strip(),
                         amount=amount,
-                        is_tax=is_tax,
-                        is_pretax=is_pretax,
-                        tax_year=deduction.get('tax_year')
+                        is_pretax=deduction.get('is_pretax', False),
+                        is_employer_contribution=deduction.get('is_employer_contribution', False)
                     )
                     session.add(ded)
+                    logger.debug(f"Added deduction: {ded.description} - {ded.amount}")
                 except (ValueError, TypeError) as e:
                     st.warning(f"⚠️ Invalid deduction data: {deduction}. Error: {str(e)}")
+                    logger.error(f"Error processing deduction: {deduction}", exc_info=True)
                     continue
 
             # Update totals if they weren't provided or don't match the sum
@@ -1220,23 +1255,42 @@ def show_upload_page(manager):
                     if st.button("✅ Confirm Reset", type="primary"):
                         with st.spinner("Resetting database..."):
                             try:
-                                with manager.get_session() as session:
-                                    # Drop all tables and recreate them
-                                    Base.metadata.drop_all(bind=engine)
-                                    session.commit()
-                                    
-                                    # Recreate all tables
-                                    Base.metadata.create_all(bind=engine)
-                                    session.commit()
-                                    
-                                    st.success("✅ Database has been reset successfully")
+                                try:
+                                    # Get a new session
+                                    session = manager.Session()
+                                    try:
+                                        # Drop all tables
+                                        Base.metadata.drop_all(bind=engine)
+                                        session.commit()
+                                        
+                                        # Recreate all tables
+                                        Base.metadata.create_all(bind=engine)
+                                        session.commit()
+                                        
+                                        st.success("✅ Database has been reset successfully")
+                                        st.session_state.show_reset_confirm = False
+                                        
+                                        # Close the session before rerunning
+                                        session.close()
+                                        
+                                        # Set a flag to indicate we need to rerun after cleanup
+                                        st.session_state.should_rerun_after_reset = True
+                                        
+                                    except Exception as e:
+                                        session.rollback()
+                                        raise e
+                                    finally:
+                                        if 'session' in locals() and session:
+                                            session.close()
+                                            
+                                except Exception as e:
+                                    st.error(f"❌ Error resetting database: {str(e)}")
+                                    st.exception(e)
                                     st.session_state.show_reset_confirm = False
-                                    st.rerun()
                             except Exception as e:
                                 st.error(f"❌ Error resetting database: {str(e)}")
                                 st.exception(e)
                                 st.session_state.show_reset_confirm = False
-                            st.exception(e)
 
 def show_payslip_details(payslip, session):
     """
@@ -1281,8 +1335,8 @@ def show_payslip_details(payslip, session):
                 for earning in earnings:
                     earnings_data.append({
                         "Description": earning.description,
-                        "Reference": earning.reference or "-",
                         "Amount": f"${float(earning.amount):,.2f}",
+                        "Type": earning.earning_type.capitalize(),
                         "Taxable": "Yes" if earning.is_taxable else "No"
                     })
                 st.table(earnings_data)
@@ -1297,9 +1351,10 @@ def show_payslip_details(payslip, session):
                 for deduction in deductions:
                     deductions_data.append({
                         "Description": deduction.description,
-                        "Reference": deduction.reference or "-",
+                        "Type": deduction.deduction_type.capitalize(),
                         "Amount": f"${float(deduction.amount):,.2f}",
-                        "Type": deduction.category.capitalize() if deduction.category else "-"
+                        "Pre-tax": "Yes" if deduction.is_pretax else "No",
+                        "Employer Paid": "Yes" if deduction.is_employer_contribution else "No"
                     })
                 st.table(deductions_data)
             else:
@@ -1319,6 +1374,63 @@ def show_payslip_details(payslip, session):
         with summary_cols[2]:
             st.metric("Net Salary", f"${float(payslip.net_salary):,.2f}" if payslip.net_salary else "N/A")
         
+        # Add PDF Viewer Section
+        st.markdown("---")
+        st.subheader("Original Document")
+        
+        # Try to locate the PDF file
+        pdf_found = False
+        pdf_path = None
+        
+        # First try the stored file_path if available
+        if payslip.file_path:
+            pdf_path = Path(payslip.file_path)
+            if pdf_path.exists() and pdf_path.is_file():
+                pdf_found = True
+            else:
+                st.warning(f"Stored PDF not found at: {pdf_path}")
+        
+        # If not found, try the original filename in the uploads directory (backward compatibility)
+        if not pdf_found and payslip.original_filename:
+            uploads_dir = Path("uploads")
+            pdf_path = uploads_dir / payslip.original_filename
+            if pdf_path.exists() and pdf_path.is_file():
+                pdf_found = True
+            else:
+                st.warning(f"Original PDF not found at: {pdf_path}")
+        
+        if pdf_found and pdf_path:
+            try:
+                with open(pdf_path, "rb") as pdf_file:
+                    pdf_bytes = pdf_file.read()
+                    b64 = base64.b64encode(pdf_bytes).decode('utf-8')
+                    
+                    # Display PDF in an iframe
+                    pdf_display = f'''
+                    <iframe src="data:application/pdf;base64,{b64}" 
+                            width="100%" 
+                            height="800" 
+                            type="application/pdf"
+                            style="border: 1px solid #ddd; border-radius: 4px;">
+                    </iframe>
+                    '''
+                    st.markdown(pdf_display, unsafe_allow_html=True)
+                    
+                    # Add download button
+                    st.download_button(
+                        label="⬇️ Download Original PDF",
+                        data=pdf_bytes,
+                        file_name=pdf_path.name,
+                        mime="application/pdf"
+                    )
+                    
+            except Exception as e:
+                st.error(f"Error loading PDF file: {str(e)}")
+                st.exception(e)
+        else:
+            st.warning("Original PDF file could not be located. It may have been moved or deleted.")
+            st.info("If you recently uploaded this file, try refreshing the page or re-uploading the document.")
+        
         # Add action buttons
         st.markdown("---")
         col1, col2, col3 = st.columns(3)
@@ -1334,6 +1446,58 @@ def show_payslip_details(payslip, session):
         with col3:
             if st.button("✏️ Edit", key=f"edit_{payslip.id}"):
                 st.session_state['edit_payslip_id'] = payslip.id
+        
+        # Add PDF Viewer Section
+        st.markdown("---")
+        st.subheader("Original Document")
+        
+        uploads_dir = Path("uploads")
+        if not uploads_dir.exists():
+            uploads_dir.mkdir(parents=True, exist_ok=True)
+            st.warning("Uploads directory was missing and has been created.")
+        
+        if payslip.original_filename:
+            try:
+                # Sanitize the filename to prevent directory traversal
+                safe_filename = Path(payslip.original_filename).name
+                pdf_path = uploads_dir / safe_filename
+                
+                if pdf_path.exists() and pdf_path.is_file():
+                    # Display PDF in an iframe
+                    with st.expander(f"📄 View Original: {safe_filename}", expanded=True):
+                        try:
+                            # Create a download button for the PDF
+                            with open(pdf_path, "rb") as pdf_file:
+                                pdf_bytes = pdf_file.read()
+                                b64 = base64.b64encode(pdf_bytes).decode('utf-8')
+                                
+                                # Display PDF in an iframe
+                                pdf_display = f'''
+                                <iframe src="data:application/pdf;base64,{b64}" 
+                                        width="100%" 
+                                        height="800" 
+                                        type="application/pdf"
+                                        style="border: 1px solid #ddd; border-radius: 4px;">
+                                </iframe>
+                                '''
+                                st.markdown(pdf_display, unsafe_allow_html=True)
+                                
+                                # Add download button
+                                st.download_button(
+                                    label="⬇️ Download Original PDF",
+                                    data=pdf_bytes,
+                                    file_name=safe_filename,
+                                    mime="application/pdf"
+                                )
+                        except Exception as e:
+                            st.error(f"Error reading PDF file: {str(e)}")
+                else:
+                    st.warning(f"Original PDF file not found at: {pdf_path.absolute()}")
+                    st.info("Please ensure the file exists in the uploads directory.")
+            except Exception as e:
+                st.error(f"Error accessing PDF file: {str(e)}")
+        else:
+            st.info("No original PDF file is associated with this payslip.")
 
 def show_view_page(manager):
     """

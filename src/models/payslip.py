@@ -157,6 +157,11 @@ class Payslip(Base):
         comment='Original PDF filename',
         index=True
     )
+    file_path = Column(
+        String(512),
+        comment='Relative path to the PDF file from the application root',
+        index=True
+    )
     file_hash = Column(
         String(64), 
         unique=True, 
