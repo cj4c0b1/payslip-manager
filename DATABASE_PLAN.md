@@ -63,6 +63,17 @@
 
 ## Important Notes
 
+### Recent Schema Changes (2025-06-17)
+- **Currency Default Update**: Changed default currency from 'USD' to 'BRL' in the `payslips` table
+- **EUR Conversion Fields**: Added new columns for EUR conversion:
+  - `exchange_rate` (NUMERIC(10, 6)): Exchange rate used for conversion
+  - `gross_salary_eur` (NUMERIC(12, 2)): Gross salary in EUR
+  - `net_salary_eur` (NUMERIC(12, 2)): Net salary in EUR
+  - `total_earnings_eur` (NUMERIC(12, 2)): Total earnings in EUR
+  - `total_deductions_eur` (NUMERIC(12, 2)): Total deductions in EUR
+  - `exchange_rate_date` (DATE): Date when exchange rate was fetched
+  - `exchange_rate_source` (VARCHAR(50)): Source of the exchange rate (e.g., 'frankfurter')
+
 ### Migration Guidelines
 1. **Schema Consistency**: Always ensure that the database schema in the models matches the actual database tables.
 2. **Migration Order**: When adding new tables or columns, make sure to:

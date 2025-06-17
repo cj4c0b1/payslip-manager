@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Added
+- **Exchange Rate Integration**
+  - Added Frankfurter API integration for BRL to EUR conversion
+  - Implemented exchange rate caching with LRU cache
+  - Added exchange rate information to payslip details
+  - Added EUR amount display for gross and net salaries
+  - Automatic exchange rate lookup based on payslip reference date
+
 ### Fixed
 - **Earnings Parsing**
   - Fixed `parse_earnings_and_deductions` to correctly return tuple of (earnings, deductions)
@@ -25,6 +33,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Enabled secret scanning for detecting exposed credentials
   - Added private vulnerability reporting for secure issue disclosure
   - Updated README with security features and documentation
+  - Secured exchange rate API calls with proper error handling and timeouts
 
 ### Added
 - GitHub Issue Management System
