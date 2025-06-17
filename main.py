@@ -5,6 +5,7 @@ import hmac
 import streamlit as st
 from pathlib import Path
 from sqlalchemy.exc import SQLAlchemyError
+from src.utils.currency import format_currency, get_currency_symbol
 
 # Set page config must be the first Streamlit command
 st.set_page_config(
@@ -1379,6 +1380,8 @@ def show_payslip_details(payslip, session):
         session: SQLAlchemy session for database operations
     """
     employee = session.get(Employee, payslip.employee_id)
+    currency = st.session_state.get('currency', 'BRL')  # Get currency from session state
+    exchange_rate = payslip.exchange_rate if hasattr(payslip, 'exchange_rate') else None
     
     employee_name = f"{employee.first_name} {employee.last_name}".strip() if employee else 'Unknown'
     with st.expander(f"📄 Payslip Details - {employee_name} - {payslip.reference_month.strftime('%B %Y') if payslip.reference_month else 'N/A'}", expanded=True):
@@ -1387,7 +1390,6 @@ def show_payslip_details(payslip, session):
         
         with col1:
             st.subheader("Employee Information")
-            employee_name = f"{employee.first_name} {employee.last_name}".strip() if employee else 'N/A'
             st.write(f"**Name:** {employee_name}")
             st.write(f"**Employee ID:** {employee.id if employee else 'N/A'}")
             st.write(f"**Department:** {employee.department if employee and employee.department else 'N/A'}")
@@ -1411,9 +1413,14 @@ def show_payslip_details(payslip, session):
             if earnings:
                 earnings_data = []
                 for earning in earnings:
+                    formatted_amount = format_currency(
+                        amount=earning.amount,
+                        currency=currency,
+                        exchange_rate=exchange_rate
+                    )
                     earnings_data.append({
                         "Description": earning.description,
-                        "Amount": f"${float(earning.amount):,.2f}",
+                        "Amount": formatted_amount,
                         "Type": earning.earning_type.capitalize(),
                         "Taxable": "Yes" if earning.is_taxable else "No"
                     })
@@ -1427,10 +1434,15 @@ def show_payslip_details(payslip, session):
             if deductions:
                 deductions_data = []
                 for deduction in deductions:
+                    formatted_amount = format_currency(
+                        amount=deduction.amount,
+                        currency=currency,
+                        exchange_rate=exchange_rate
+                    )
                     deductions_data.append({
                         "Description": deduction.description,
                         "Type": deduction.deduction_type.capitalize(),
-                        "Amount": f"${float(deduction.amount):,.2f}",
+                        "Amount": formatted_amount,
                         "Pre-tax": "Yes" if deduction.is_pretax else "No",
                         "Employer Paid": "Yes" if deduction.is_employer_contribution else "No"
                     })
@@ -1444,13 +1456,28 @@ def show_payslip_details(payslip, session):
         summary_cols = st.columns(3)
         
         with summary_cols[0]:
-            st.metric("Gross Salary", f"${float(payslip.gross_salary):,.2f}" if payslip.gross_salary else "N/A")
+            gross_display = format_currency(
+                amount=payslip.gross_salary,
+                currency=currency,
+                exchange_rate=exchange_rate
+            ) if payslip.gross_salary else "N/A"
+            st.metric("Gross Salary", gross_display)
         
         with summary_cols[1]:
-            st.metric("Total Deductions", f"${float(payslip.total_deductions):,.2f}" if payslip.total_deductions else "N/A")
+            deductions_display = format_currency(
+                amount=payslip.total_deductions,
+                currency=currency,
+                exchange_rate=exchange_rate
+            ) if payslip.total_deductions else "N/A"
+            st.metric("Total Deductions", deductions_display)
         
         with summary_cols[2]:
-            st.metric("Net Salary", f"${float(payslip.net_salary):,.2f}" if payslip.net_salary else "N/A")
+            net_display = format_currency(
+                amount=payslip.net_salary,
+                currency=currency,
+                exchange_rate=exchange_rate
+            ) if payslip.net_salary else "N/A"
+            st.metric("Net Salary", net_display)
         
         # PDF Viewer Section
         st.markdown("---")
@@ -1595,15 +1622,31 @@ def show_view_page(manager):
         data = []
         for payslip in payslips:
             employee = session.get(Employee, payslip.employee_id)
+            currency = st.session_state.get('currency', 'BRL')
+            exchange_rate = payslip.exchange_rate if hasattr(payslip, 'exchange_rate') else None
+            
+            # Format amounts using the exchange rate for conversion if needed
+            gross_amount = format_currency(
+                amount=payslip.gross_salary,
+                currency=currency,
+                exchange_rate=exchange_rate
+            )
+            net_amount = format_currency(
+                amount=payslip.net_salary,
+                currency=currency,
+                exchange_rate=exchange_rate
+            )
+            
             data.append({
                 "ID": payslip.id,
                 "Employee": f"{employee.first_name} {employee.last_name}" if employee else "Unknown",
                 "Employee ID": employee.id if employee else "N/A",
                 "Reference Month": payslip.reference_month.strftime("%B %Y") if payslip.reference_month else "N/A",
-                "Gross Salary": float(payslip.gross_salary) if payslip.gross_salary else 0.0,
-                "Net Salary": float(payslip.net_salary) if payslip.net_salary else 0.0,
+                f"Gross ({currency})": gross_amount,
+                f"Net ({currency})": net_amount,
                 "Payment Date": payslip.payment_date.strftime("%Y-%m-%d") if payslip.payment_date else "N/A",
-                "Status": payslip.status.capitalize() if payslip.status else "N/A"
+                "Status": payslip.status.capitalize() if payslip.status else "N/A",
+                "Actions": f"[View](#payslip-{payslip.id})"
             })
         
         # Display the table with enhanced features
@@ -1613,7 +1656,7 @@ def show_view_page(manager):
             # Create a table using st.columns for layout
             col_widths = [50, 150, 100, 120, 120, 120, 110, 100, 100]
             col_names = ["ID", "Employee", "Employee ID", "Reference Month", 
-                        "Gross Salary", "Net Salary", "Payment Date", "Status", "Actions"]
+                        f"Gross ({currency})", f"Net ({currency})", "Payment Date", "Status", "Actions"]
             
             # Display headers
             cols = st.columns(col_widths)
@@ -1632,9 +1675,9 @@ def show_view_page(manager):
                 with cols[3]:
                     st.write(row["Reference Month"])
                 with cols[4]:
-                    st.write(f"${row['Gross Salary']:,.2f}")
+                    st.write(row[f"Gross ({currency})"])  # Use dynamic column name with currency
                 with cols[5]:
-                    st.write(f"${row['Net Salary']:,.2f}")
+                    st.write(row[f"Net ({currency})"])  # Use dynamic column name with currency
                 with cols[6]:
                     st.write(row["Payment Date"])
                 with cols[7]:
@@ -1702,149 +1745,117 @@ def show_reports_page(manager):
         else:
             st.info("No payslip data available for reporting.")
             return
-        
-        # Get employee options for the filter
-        employees = session.query(Employee).order_by(Employee.last_name, Employee.first_name).all()
-        employee_options = ["All Employees"] + [f"{emp.last_name}, {emp.first_name} ({emp.id})" for emp in employees]
-        
-        selected_employee = st.sidebar.selectbox(
-            "Employee",
-            options=employee_options,
-            index=0
-        )
-        
-        # Build the base query
-        query = session.query(Payslip, Employee).join(Employee)
-        
-        # Apply filters
-        if selected_employee != "All Employees":
-            employee_id = int(selected_employee.split('(')[-1].rstrip(')'))
-            query = query.filter(Employee.id == employee_id)
-        
-        # Apply date range filter
-        query = query.filter(
-            func.date(Payslip.reference_month) >= start_date,
-            func.date(Payslip.reference_month) <= end_date
-        )
-        
-        # Execute the query
-        results = query.all()
-        
-        if not results:
-            st.warning("No data found matching the selected filters.")
-            return
-            
         # Convert to DataFrame for easier manipulation
         data = []
-        for payslip, employee in results:
+        for p in payslips:
+            # Use EUR amounts if currency is EUR and they exist
+            if currency == 'EUR' and hasattr(p, 'gross_amount_eur') and hasattr(p, 'net_amount_eur'):
+                gross = float(p.gross_amount_eur) if p.gross_amount_eur is not None else 0.0
+                tax = float(getattr(p, 'tax_deductions_eur', 0)) if hasattr(p, 'tax_deductions_eur') and getattr(p, 'tax_deductions_eur') is not None else 0.0
+                net = float(p.net_amount_eur) if p.net_amount_eur is not None else 0.0
+            else:
+                gross = float(p.gross_salary) if p.gross_salary is not None else 0.0
+                tax = float(p.tax_deductions) if p.tax_deductions is not None else 0.0
+                net = float(p.net_salary) if p.net_salary is not None else 0.0
+            
             data.append({
-                "Employee": f"{employee.first_name} {employee.last_name}".strip(),
-                "Employee ID": employee.id,
-                "Department": (employee.department or "N/A") if hasattr(employee, 'department') else "N/A",
-                "Position": (employee.position or "N/A") if hasattr(employee, 'position') else "N/A",
-                "Reference Month": payslip.reference_month,
-                "Year": payslip.reference_month.year,
-                "Month": payslip.reference_month.month,
-                "Month Name": payslip.reference_month.strftime("%B"),
-                "Gross Salary": float(payslip.gross_salary) if payslip.gross_salary else 0.0,
-                "Net Salary": float(payslip.net_salary) if payslip.net_salary else 0.0,
-                "Total Deductions": float(payslip.total_deductions) if payslip.total_deductions else 0.0,
-                "Status": payslip.status.capitalize() if payslip.status else "N/A"
+                "id": p.id,
+                "employee_id": p.employee_id,
+                "employee_name": f"{p.employee.first_name} {p.employee.last_name}" if p.employee else "Unknown",
+                "reference_month": p.reference_month,
+                "payment_date": p.payment_date,
+                "gross_salary": gross,
+                "tax_deductions": tax,
+                "net_salary": net,
+                "status": p.status,
+                "department": p.employee.department if p.employee and p.employee.department else "Unknown"
             })
         
         df = pd.DataFrame(data)
         
-        # Show summary statistics
-        st.subheader("📊 Summary Statistics")
+        # Add month and year columns for grouping
+        df['month_year'] = df['reference_month'].dt.strftime('%Y-%m')
+        df['year'] = df['reference_month'].dt.year
+        df['month'] = df['reference_month'].dt.month_name()
+        
+        # Summary statistics
+        st.subheader("Summary Statistics")
         
         col1, col2, col3, col4 = st.columns(4)
-        
         with col1:
-            st.metric("Total Employees", df['Employee'].nunique())
-        
+            st.metric("Total Employees", df['employee_id'].nunique())
         with col2:
             st.metric("Total Payslips", len(df))
-            
         with col3:
-            st.metric("Total Gross Pay", f"${df['Gross Salary'].sum():,.2f}")
-            
+            st.metric(f"Total Gross ({currency})", f"{currency_symbol} {df['gross_salary'].sum():,.2f}")
         with col4:
-            st.metric("Average Net Pay", f"${df['Net Salary'].mean():,.2f}")
+            st.metric(f"Total Net ({currency})", f"{currency_symbol} {df['net_salary'].sum():,.2f}")
         
-        # Time series of gross and net pay
-        st.subheader("💵 Salary Trends Over Time")
+        # Time-based analysis
+        st.subheader("Monthly Trends")
         
         # Group by month and calculate sums
-        monthly_data = df.groupby(['Year', 'Month', 'Month Name']).agg({
-            'Gross Salary': 'sum',
-            'Net Salary': 'sum',
-            'Total Deductions': 'sum'
+        monthly_data = df.groupby('month_year').agg({
+            'gross_salary': 'sum',
+            'tax_deductions': 'sum',
+            'net_salary': 'sum',
+            'id': 'count'
         }).reset_index()
         
-        # Create a proper date column for sorting
-        monthly_data['Date'] = pd.to_datetime(monthly_data['Year'].astype(str) + '-' + monthly_data['Month'].astype(str) + '-01')
-        monthly_data = monthly_data.sort_values('Date')
-        
-        # Create the line chart
+        # Create line chart for monthly trends
         fig = px.line(
-            monthly_data,
-            x='Date',
-            y=['Gross Salary', 'Net Salary', 'Total Deductions'],
-            title='Salary Trends Over Time',
-            labels={'value': 'Amount ($)', 'variable': 'Type'},
-            height=400
+            monthly_data, 
+            x='month_year', 
+            y=['gross_salary', 'net_salary'],
+            title=f"Monthly Salary Trends ({currency})",
+            labels={
+                "value": f"Amount ({currency_symbol})", 
+                "month_year": "Month/Year", 
+                "variable": "Type"
+            }
         )
-        
-        # Update layout
-        fig.update_layout(
-            xaxis_title='Month',
-            yaxis_title='Amount ($)',
-            legend_title='Salary Type',
-            hovermode='x unified'
-        )
-        
         st.plotly_chart(fig, use_container_width=True)
         
         # Department-wise analysis
-        st.subheader("🏢 Department-wise Analysis")
+        st.subheader("Department-wise Analysis")
         
-        if 'Department' in df.columns and df['Department'].nunique() > 1:
-            dept_data = df.groupby('Department').agg({
-                'Employee': 'nunique',
-                'Gross Salary': 'sum',
-                'Net Salary': 'sum',
-                'Total Deductions': 'sum'
-            }).reset_index()
+        department_data = df.groupby('department').agg({
+            'gross_salary': 'sum',
+            'net_salary': 'sum',
+            'id': 'count',
+            'employee_id': 'nunique'
+        }).reset_index()
+        
+        if len(department_data) > 1:  # Only show if we have multiple departments
+            col1, col2 = st.columns(2)
             
-            # Calculate averages
-            dept_data['Avg Gross'] = dept_data['Gross Salary'] / dept_data['Employee']
-            dept_data['Avg Net'] = dept_data['Net Salary'] / dept_data['Employee']
-            
-            # Display department metrics
-            cols = st.columns(2)
-            
-            with cols[0]:
-                st.markdown("#### Total Pay by Department")
+            with col1:
+                # Department distribution pie chart
                 fig1 = px.pie(
-                    dept_data,
-                    names='Department',
-                    values='Gross Salary',
-                    title='Total Gross Pay by Department'
+                    department_data, 
+                    values='gross_salary', 
+                    names='department',
+                    title=f"Gross Salary by Department ({currency})",
+                    labels={'gross_salary': f'Amount ({currency_symbol})'}
                 )
                 st.plotly_chart(fig1, use_container_width=True)
-                
-            with cols[1]:
-                st.markdown("#### Average Pay by Department")
+            
+            with col2:
+                # Department bar chart - average salary per employee
+                department_data['avg_salary'] = department_data['net_salary'] / department_data['employee_id']
                 fig2 = px.bar(
-                    dept_data,
-                    x='Department',
-                    y='Avg Gross',
-                    title='Average Gross Pay by Department',
-                    labels={'Avg Gross': 'Average Gross Pay ($)'}
+                    department_data,
+                    x='department',
+                    y='avg_salary',
+                    title=f"Average Net Salary by Department ({currency})",
+                    labels={
+                        'avg_salary': f'Average Net Salary ({currency_symbol})',
+                        'department': 'Department'
+                    }
                 )
                 st.plotly_chart(fig2, use_container_width=True)
         else:
-            st.info("Insufficient department data for analysis.")
+            st.info("Insufficient department data for analysis. Add more departments to see detailed breakdowns.")
         
         # Export options
         st.subheader("📤 Export Data")
@@ -2095,6 +2106,27 @@ def main_app():
         }[x]
     )
     
+    # Currency Toggle with Flags
+    st.sidebar.markdown("---")
+    st.sidebar.subheader("💱 Display Currency")
+    
+    # Define currencies with their respective flags and labels
+    currency_options = {
+        'BRL': {'flag': '🇧🇷', 'label': 'BRL'},
+        'EUR': {'flag': '🇪🇺', 'label': 'EUR'}
+    }
+    
+    # Create radio buttons with emoji flags
+    currency = st.sidebar.radio(
+        "Select currency",
+        options=list(currency_options.keys()),
+        index=0 if st.session_state.get('currency', 'BRL') == 'BRL' else 1,
+        format_func=lambda x: f"{currency_options[x]['flag']} {currency_options[x]['label']}",
+        horizontal=True,
+        label_visibility="collapsed"
+    )
+    st.session_state.currency = currency
+    
     # Main app logic
     manager = PayslipManager()
     
@@ -2277,9 +2309,11 @@ def verify_magic_link(token: str) -> bool:
 
 def main():
     """Main entry point with authentication check."""
-    # Initialize session state for authentication
+    # Initialize session state for authentication and preferences
     if 'authenticated' not in st.session_state:
         st.session_state.authenticated = False
+        st.session_state.user = None
+        st.session_state.currency = 'BRL'  # Default to BRL
     
     # Check for magic link token in URL
     token = st.query_params.get("token")
