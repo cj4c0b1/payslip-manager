@@ -15,6 +15,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Automatic exchange rate lookup based on payslip reference date
 
 ### Fixed
+- **PDF Download Buttons**
+  - Fixed PDF download buttons to use correct file paths from the database
+  - Added proper MIME type handling for PDF downloads
+  - Improved error handling for missing or inaccessible PDF files
+  - Fixed TypeError in download button implementation
+  - Note: PDF viewing/downloading works correctly in Chrome (issue was specific to Windsurf browser)
+
 - **Earnings Parsing**
   - Fixed `parse_earnings_and_deductions` to correctly return tuple of (earnings, deductions)
   - Improved handling of malformed numeric data in earnings, especially for "AD C DISP MIL"

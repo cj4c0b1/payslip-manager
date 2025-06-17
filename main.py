@@ -1297,6 +1297,79 @@ def show_upload_page(manager):
                                 st.exception(e)
                                 st.session_state.show_reset_confirm = False
 
+def _get_pdf_path(payslip):
+    """
+    Get the PDF path for a payslip, checking multiple possible locations.
+    
+    Args:
+        payslip: The Payslip object
+        
+    Returns:
+        tuple: (pdf_path: Path, source: str) or (None, None) if not found
+    """
+    # 1. Try the stored file_path first (primary source)
+    if payslip.file_path:
+        pdf_path = Path(payslip.file_path)
+        if pdf_path.exists() and pdf_path.is_file():
+            return pdf_path, "stored_path"
+    
+    # 2. Try the original filename in the uploads directory (backward compatibility)
+    if payslip.original_filename:
+        safe_filename = Path(payslip.original_filename).name
+        uploads_dir = Path("uploads")
+        pdf_path = uploads_dir / safe_filename
+        if pdf_path.exists() and pdf_path.is_file():
+            return pdf_path, "uploads_dir"
+    
+    return None, None
+
+def _display_pdf_viewer(pdf_path, file_name):
+    """
+    Display a PDF in a Streamlit viewer with download option.
+    
+    Args:
+        pdf_path: Path to the PDF file
+        file_name: Name to use when downloading the file (should include .pdf extension)
+    """
+    try:
+        # Ensure the filename has a .pdf extension
+        if not file_name.lower().endswith('.pdf'):
+            file_name = f"{file_name}.pdf"
+        
+        # Read file in binary mode
+        with open(pdf_path, "rb") as pdf_file:
+            pdf_bytes = pdf_file.read()
+            
+            # Create a base64 encoded string for the iframe
+            b64 = base64.b64encode(pdf_bytes).decode('utf-8')
+            
+            # Display PDF in an iframe
+            pdf_display = f'''
+            <iframe src="data:application/pdf;base64,{b64}" 
+                    width="100%" 
+                    height="800" 
+                    type="application/pdf"
+                    style="border: 1px solid #ddd; border-radius: 4px;">
+            </iframe>
+            '''
+            st.markdown(pdf_display, unsafe_allow_html=True)
+            
+            # Create a download button with the file data
+            st.download_button(
+                label="⬇️ Download Original PDF",
+                data=pdf_bytes,
+                file_name=file_name,
+                mime="application/pdf",
+                key=f"download_original_{pdf_path.name}",
+                on_click=None  # Removed "ignore" string which was causing TypeError
+            )
+            
+    except Exception as e:
+        st.error(f"Error loading PDF file: {str(e)}")
+        logger.error(f"Error loading PDF {pdf_path}: {str(e)}", exc_info=True)
+        return False
+    return True
+
 def show_payslip_details(payslip, session):
     """
     Display detailed information about a specific payslip.
@@ -1379,61 +1452,27 @@ def show_payslip_details(payslip, session):
         with summary_cols[2]:
             st.metric("Net Salary", f"${float(payslip.net_salary):,.2f}" if payslip.net_salary else "N/A")
         
-        # Add PDF Viewer Section
+        # PDF Viewer Section
         st.markdown("---")
         st.subheader("Original Document")
         
         # Try to locate the PDF file
-        pdf_found = False
-        pdf_path = None
+        pdf_path, source = _get_pdf_path(payslip)
         
-        # First try the stored file_path if available
-        if payslip.file_path:
-            pdf_path = Path(payslip.file_path)
-            if pdf_path.exists() and pdf_path.is_file():
-                pdf_found = True
+        if pdf_path:
+            if source == "stored_path":
+                st.info(f"Found PDF at stored path: {pdf_path}")
             else:
-                st.warning(f"Stored PDF not found at: {pdf_path}")
-        
-        # If not found, try the original filename in the uploads directory (backward compatibility)
-        if not pdf_found and payslip.original_filename:
-            uploads_dir = Path("uploads")
-            pdf_path = uploads_dir / payslip.original_filename
-            if pdf_path.exists() and pdf_path.is_file():
-                pdf_found = True
-            else:
-                st.warning(f"Original PDF not found at: {pdf_path}")
-        
-        if pdf_found and pdf_path:
-            try:
-                with open(pdf_path, "rb") as pdf_file:
-                    pdf_bytes = pdf_file.read()
-                    b64 = base64.b64encode(pdf_bytes).decode('utf-8')
-                    
-                    # Display PDF in an iframe
-                    pdf_display = f'''
-                    <iframe src="data:application/pdf;base64,{b64}" 
-                            width="100%" 
-                            height="800" 
-                            type="application/pdf"
-                            style="border: 1px solid #ddd; border-radius: 4px;">
-                    </iframe>
-                    '''
-                    st.markdown(pdf_display, unsafe_allow_html=True)
-                    
-                    # Add download button
-                    st.download_button(
-                        label="⬇️ Download Original PDF",
-                        data=pdf_bytes,
-                        file_name=pdf_path.name,
-                        mime="application/pdf"
-                    )
-                    
-            except Exception as e:
-                st.error(f"Error loading PDF file: {str(e)}")
-                st.exception(e)
+                st.info(f"Found PDF in uploads directory: {pdf_path.name}")
+            
+            # Display the PDF viewer with download option
+            _display_pdf_viewer(pdf_path, pdf_path.name)
         else:
             st.warning("Original PDF file could not be located. It may have been moved or deleted.")
+            if payslip.file_path:
+                st.error(f"Expected PDF at: {payslip.file_path}")
+            if payslip.original_filename:
+                st.error(f"Also checked uploads directory for: {payslip.original_filename}")
             st.info("If you recently uploaded this file, try refreshing the page or re-uploading the document.")
         
         # Add action buttons
@@ -1445,63 +1484,43 @@ def show_payslip_details(payslip, session):
                 st.session_state['print_payslip_id'] = payslip.id
         
         with col2:
-            if st.button("📥 Download PDF", key=f"download_{payslip.id}"):
-                st.session_state['download_payslip_id'] = payslip.id
+            if pdf_path and pdf_path.exists():
+                try:
+                    with open(pdf_path, "rb") as f:
+                        pdf_data = f.read()
+                        
+                    # Ensure the filename has a .pdf extension
+                    file_name = pdf_path.name
+                    if not file_name.lower().endswith('.pdf'):
+                        file_name = f"{file_name}.pdf"
+                    
+                    # Create a download button
+                    st.download_button(
+                        label="📥 Download PDF",
+                        data=pdf_data,
+                        file_name=file_name,
+                        mime="application/octet-stream",
+                        key=f"download_btn_{payslip.id}",
+                        on_click=None  # Removed "ignore" string which was causing TypeError
+                    )
+                except Exception as e:
+                    st.error(f"Error preparing PDF for download: {str(e)}")
+                    logger.error(f"Error preparing PDF {pdf_path} for download: {str(e)}", exc_info=True)
+                    st.button("📥 Download PDF", 
+                             disabled=True, 
+                             help="Error preparing file for download",
+                             key=f"download_error_{payslip.id}")
+            else:
+                st.button("📥 Download PDF", 
+                         disabled=True, 
+                         help="PDF file not available for download",
+                         key=f"download_disabled_{payslip.id}")
         
         with col3:
             if st.button("✏️ Edit", key=f"edit_{payslip.id}"):
                 st.session_state['edit_payslip_id'] = payslip.id
-        
-        # Add PDF Viewer Section
-        st.markdown("---")
-        st.subheader("Original Document")
-        
-        uploads_dir = Path("uploads")
-        if not uploads_dir.exists():
-            uploads_dir.mkdir(parents=True, exist_ok=True)
-            st.warning("Uploads directory was missing and has been created.")
-        
-        if payslip.original_filename:
-            try:
-                # Sanitize the filename to prevent directory traversal
-                safe_filename = Path(payslip.original_filename).name
-                pdf_path = uploads_dir / safe_filename
                 
-                if pdf_path.exists() and pdf_path.is_file():
-                    # Display PDF in an iframe
-                    with st.expander(f"📄 View Original: {safe_filename}", expanded=True):
-                        try:
-                            # Create a download button for the PDF
-                            with open(pdf_path, "rb") as pdf_file:
-                                pdf_bytes = pdf_file.read()
-                                b64 = base64.b64encode(pdf_bytes).decode('utf-8')
-                                
-                                # Display PDF in an iframe
-                                pdf_display = f'''
-                                <iframe src="data:application/pdf;base64,{b64}" 
-                                        width="100%" 
-                                        height="800" 
-                                        type="application/pdf"
-                                        style="border: 1px solid #ddd; border-radius: 4px;">
-                                </iframe>
-                                '''
-                                st.markdown(pdf_display, unsafe_allow_html=True)
-                                
-                                # Add download button
-                                st.download_button(
-                                    label="⬇️ Download Original PDF",
-                                    data=pdf_bytes,
-                                    file_name=safe_filename,
-                                    mime="application/pdf"
-                                )
-                        except Exception as e:
-                            st.error(f"Error reading PDF file: {str(e)}")
-                else:
-                    st.warning(f"Original PDF file not found at: {pdf_path.absolute()}")
-                    st.info("Please ensure the file exists in the uploads directory.")
-            except Exception as e:
-                st.error(f"Error accessing PDF file: {str(e)}")
-        else:
+        if not payslip.original_filename and not payslip.file_path:
             st.info("No original PDF file is associated with this payslip.")
 
 def show_view_page(manager):

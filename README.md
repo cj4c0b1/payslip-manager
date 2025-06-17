@@ -134,6 +134,28 @@ payslip-manager/
 └── README.md                 # This file
 ```
 
+## Browser Compatibility
+
+This application has been tested and works best with the following browsers:
+
+- **Google Chrome** (Recommended)
+  - Full support for all features including PDF viewing and downloading
+  - Best performance and compatibility
+
+- **Mozilla Firefox**
+  - Full support for most features
+  - PDF viewing and downloading works as expected
+
+- **Safari**
+  - Basic functionality works
+  - Some PDF viewing features may be limited
+
+- **Microsoft Edge**
+  - Based on Chromium, so most features work well
+  - PDF handling is generally good
+
+> **Note**: The built-in browser in some IDEs (like Windsurf) may have limited PDF viewing/downloading capabilities. For the best experience, please use a standard web browser like Chrome or Firefox.
+
 ## Configuration
 
 Create a `.env` file in the project root with the following variables:
