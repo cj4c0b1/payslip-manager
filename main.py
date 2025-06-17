@@ -1076,6 +1076,11 @@ class PayslipManager:
                 
             if payslip.net_salary != calculated_net:
                 payslip.net_salary = calculated_net
+            
+            # Update EUR amounts if the currency is BRL
+            if payslip.currency == 'BRL':
+                if not payslip.update_eur_amounts():
+                    logger.warning(f"Failed to update EUR amounts for payslip {payslip.id}")
 
             session.commit()
             return True

@@ -103,7 +103,7 @@ class Payslip(Base):
     )
     currency = Column(
         String(3), 
-        default='USD', 
+        default='BRL', 
         nullable=False,
         comment='Currency code (ISO 4217)'
     )
@@ -180,6 +180,33 @@ class Payslip(Base):
         onupdate=datetime.utcnow, 
         nullable=False,
         comment='Timestamp when the record was last updated'
+    )
+    
+    # Exchange rate information
+    exchange_rate = Column(
+        Numeric(10, 6),
+        nullable=True,
+        comment='Exchange rate: 1 BRL = X EUR at the time of upload'
+    )
+    gross_amount_eur = Column(
+        Numeric(12, 2),
+        nullable=True,
+        comment='Gross salary amount in EUR'
+    )
+    net_amount_eur = Column(
+        Numeric(12, 2),
+        nullable=True,
+        comment='Net salary amount in EUR'
+    )
+    exchange_rate_date = Column(
+        Date,
+        nullable=True,
+        comment='Date when exchange rate was fetched (usually same as reference_month)'
+    )
+    exchange_rate_source = Column(
+        String(50),
+        nullable=True,
+        comment='Source of the exchange rate (e.g., BCB, ECB)'
     )
     
     # Relationships
@@ -287,23 +314,94 @@ class Payslip(Base):
         """Return the payment date as a formatted string."""
         return self.payment_date.strftime('%b %d, %Y')
     
+    def update_eur_amounts(self) -> bool:
+        """
+        Update EUR amounts using the exchange rate service.
+        
+        Returns:
+            bool: True if update was successful, False otherwise
+        """
+        if self.currency != 'BRL':
+            return False  # Skip if not BRL
+            
+        from src.services.exchange_rate_service import exchange_rate_service
+        
+        try:
+            # Get exchange rate for the reference month
+            rate_data = exchange_rate_service.get_rate(
+                target_date=self.reference_month
+            )
+            
+            # Update the exchange rate information
+            self.exchange_rate = rate_data['rate']
+            self.exchange_rate_date = rate_data['date']
+            self.exchange_rate_source = 'Frankfurter'
+            
+            # Update EUR amounts
+            if self.gross_salary is not None:
+                self.gross_amount_eur = (Decimal(str(self.gross_salary)) * 
+                                       rate_data['rate']).quantize(Decimal('0.01'))
+            if self.net_salary is not None:
+                self.net_amount_eur = (Decimal(str(self.net_salary)) * 
+                                     rate_data['rate']).quantize(Decimal('0.01'))
+            return True
+                                     
+        except Exception as e:
+            logger.error(f"Failed to update EUR amounts: {e}")
+            # Set to None to indicate failure
+            self.exchange_rate = None
+            self.exchange_rate_date = None
+            self.exchange_rate_source = None
+            self.gross_amount_eur = None
+            self.net_amount_eur = None
+            return False
+    
+    def get_eur_amount(self, amount_brl: Decimal) -> Decimal:
+        """
+        Convert an amount from BRL to EUR using the stored exchange rate.
+        
+        Args:
+            amount_brl: Amount in BRL to convert
+            
+        Returns:
+            Amount in EUR, or None if conversion is not possible
+        """
+        if self.exchange_rate is None or amount_brl is None:
+            return None
+        return Decimal(str(amount_brl)) * self.exchange_rate
+    
     def to_dict(self) -> dict:
         """Convert the payslip to a dictionary."""
-        return {
+        result = {
             'id': self.id,
             'employee_id': self.employee_id,
             'employee_name': self.employee.full_name if self.employee else 'Unknown',
             'pay_period': self.formatted_pay_period,
             'pay_period_start': self.pay_period_start.isoformat(),
             'pay_period_end': self.pay_period_end.isoformat(),
-            'payment_date': self.payment_date.isoformat(),
+            'payment_date': self.payment_date.isoformat() if self.payment_date else None,
             'formatted_payment_date': self.formatted_payment_date,
-            'gross_pay': float(self.gross_pay) if self.gross_pay is not None else 0.0,
-            'tax_amount': float(self.tax_amount) if self.tax_amount is not None else 0.0,
-            'net_pay': float(self.net_pay) if self.net_pay is not None else 0.0,
+            'gross_pay': float(self.gross_salary) if self.gross_salary is not None else 0.0,
+            'tax_amount': float(self.tax_deductions) if self.tax_deductions is not None else 0.0,
+            'net_pay': float(self.net_salary) if self.net_salary is not None else 0.0,
             'currency': self.currency,
             'status': self.status,
             'notes': self.notes or '',
             'created_at': self.created_at.isoformat() if self.created_at else None,
-            'updated_at': self.updated_at.isoformat() if self.updated_at else None
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+            # Add exchange rate information
+            'exchange_rate': float(self.exchange_rate) if self.exchange_rate is not None else None,
+            'exchange_rate_date': self.exchange_rate_date.isoformat() if self.exchange_rate_date else None,
+            'exchange_rate_source': self.exchange_rate_source,
+            'gross_amount_eur': float(self.gross_amount_eur) if self.gross_amount_eur is not None else None,
+            'net_amount_eur': float(self.net_amount_eur) if self.net_amount_eur is not None else None,
+            'eur_currency': 'EUR' if self.exchange_rate is not None else None
         }
+        
+        # Add formatted EUR amounts if available
+        if self.gross_amount_eur is not None:
+            result['formatted_gross_eur'] = f"€{self.gross_amount_eur:,.2f}"
+        if self.net_amount_eur is not None:
+            result['formatted_net_eur'] = f"€{self.net_amount_eur:,.2f}"
+            
+        return result
