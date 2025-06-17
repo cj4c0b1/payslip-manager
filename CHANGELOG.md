@@ -7,12 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
+- **Currency Toggle Feature**
+  - Added dynamic currency toggle in sidebar for switching between BRL and EUR
+  - Implemented on-the-fly currency conversion using stored exchange rates
+  - Added visual indicators (🇧🇷/🇪🇺) for currency selection
+  - Persisted currency preference in session state
+
 - **Exchange Rate Integration**
   - Added Frankfurter API integration for BRL to EUR conversion
   - Implemented exchange rate caching with LRU cache
   - Added exchange rate information to payslip details
   - Added EUR amount display for gross and net salaries
   - Automatic exchange rate lookup based on payslip reference date
+
+### Changed
+- **Currency Handling**
+  - Refactored currency formatting to use dynamic conversion
+  - Removed redundant EUR amount fields from database queries
+  - Updated all views to use the new format_currency function with exchange rates
+  - Improved number formatting for European locale (€1.234,56 format)
 
 ### Fixed
 - **PDF Download Buttons**

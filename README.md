@@ -18,6 +18,9 @@ A Streamlit-based application for managing and analyzing employee payslips in PD
   - Real-time exchange rate lookups
   - Cached rates for performance
   - Historical rate tracking by payslip date
+  - Dynamic currency toggle (🇧🇷/🇪🇺) in the sidebar
+  - On-the-fly conversion using stored exchange rates
+  - Persistent user preference for currency display
 - **Secure Authentication**: Passwordless email-based authentication with magic links
   - No passwords to remember or manage
   - Single-use, time-limited login links
