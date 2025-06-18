@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Fixed
+- **Export Functionality**
+  - Fixed issue where January 2023 payslips were not appearing in exports
+  - Aligned date filtering in reports page with view page's string-based approach
+  - Improved date range filtering to be more consistent across the application
+
 ### Added
 - **Currency Toggle Feature**
   - Added dynamic currency toggle in sidebar for switching between BRL and EUR

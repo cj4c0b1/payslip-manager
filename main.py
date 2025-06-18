@@ -15,8 +15,11 @@ st.set_page_config(
 )
 
 import pandas as pd
+import numpy as np
 import plotly.express as px
-from datetime import datetime, date, timedelta
+import plotly.graph_objects as go
+from datetime import datetime, timedelta
+from src.utils.currency import get_currency_symbol
 from pathlib import Path
 import shutil
 from io import BytesIO
@@ -1719,21 +1722,24 @@ def show_reports_page(manager):
     st.sidebar.header("Filters")
     
     with manager.get_session() as session:
+        # Initialize payslips to empty list
+        payslips = []
+        
         # Get date range from data
         min_date = session.query(func.min(Payslip.reference_month)).scalar()
         max_date = session.query(func.max(Payslip.reference_month)).scalar()
         
         if min_date and max_date:
             # Convert to datetime for the date_input widget
-            min_date = datetime(min_date.year, min_date.month, 1)
-            max_date = datetime(max_date.year, max_date.month, 1)
+            min_date_dt = datetime(min_date.year, min_date.month, 1)
+            max_date_dt = datetime(max_date.year, max_date.month, 1)
             
             # Add date range filter
             date_range = st.sidebar.date_input(
                 "Date Range",
-                value=(min_date, max_date),
-                min_value=min_date,
-                max_value=max_date,
+                value=(min_date_dt, max_date_dt),
+                min_value=min_date_dt,
+                max_value=max_date_dt,
                 key="date_range"
             )
             
@@ -1741,10 +1747,35 @@ def show_reports_page(manager):
             if len(date_range) == 2 and date_range[0] and date_range[1]:
                 start_date, end_date = date_range
             else:
-                start_date, end_date = min_date, max_date
+                start_date, end_date = min_date_dt, max_date_dt
+                
+            # Query payslips within the selected date range using string-based filtering
+            # for consistency with the view page
+            query = session.query(Payslip)
+            
+            # Filter by year and month using strftime to match the view page's behavior
+            if start_date:
+                query = query.filter(
+                    func.strftime('%Y-%m', Payslip.reference_month) >= f"{start_date.year}-{start_date.month:02d}"
+                )
+            if end_date:
+                query = query.filter(
+                    func.strftime('%Y-%m', Payslip.reference_month) <= f"{end_date.year}-{end_date.month:02d}"
+                )
+                
+            payslips = query.all()
+            
+            if not payslips:
+                st.info("No payslips found in the selected date range.")
+                return
         else:
             st.info("No payslip data available for reporting.")
             return
+            
+        # Get currency preference and symbol
+        currency = st.session_state.get('currency', 'BRL')
+        currency_symbol = get_currency_symbol(currency)
+        
         # Convert to DataFrame for easier manipulation
         data = []
         for p in payslips:
@@ -1767,11 +1798,15 @@ def show_reports_page(manager):
                 "gross_salary": gross,
                 "tax_deductions": tax,
                 "net_salary": net,
+                "exchange_rate": p.exchange_rate,
                 "status": p.status,
                 "department": p.employee.department if p.employee and p.employee.department else "Unknown"
             })
         
         df = pd.DataFrame(data)
+        
+        # Ensure reference_month is datetime type
+        df['reference_month'] = pd.to_datetime(df['reference_month'])
         
         # Add month and year columns for grouping
         df['month_year'] = df['reference_month'].dt.strftime('%Y-%m')
@@ -1892,10 +1927,9 @@ def show_reports_page(manager):
                 file_name=f"payslip_report_{datetime.now().strftime('%Y%m%d')}.xlsx",
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             )
-        payslips = session.query(Payslip).join(Employee).all()
-        
+            
         if not payslips:
-            st.info("No payslips found in the database.")
+            st.info("No payslips found matching the selected filters.")
             return
         
         # Create a DataFrame for analysis
@@ -1910,6 +1944,7 @@ def show_reports_page(manager):
                 "Reference Month": payslip.reference_month,
                 "Gross Salary": payslip.gross_salary,
                 "Net Salary": payslip.net_salary,
+                "Exchange Rate": payslip.exchange_rate,
                 "Payment Date": payslip.payment_date
             })
         
