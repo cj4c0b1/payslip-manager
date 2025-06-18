@@ -18,7 +18,7 @@ import pandas as pd
 import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from src.utils.currency import get_currency_symbol
 from pathlib import Path
 import shutil
