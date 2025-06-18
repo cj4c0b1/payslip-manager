@@ -1,0 +1,551 @@
+
+[     UTC     ] Logs for cvvwfybyhovtxaslgwhduw.streamlit.app/
+────────────────────────────────────────────────────────────────────────────────────────
+[15:16:42] 🖥 Provisioning machine...
+[15:16:42] 🎛 Preparing system...
+[15:16:42] ⛓ Spinning up manager process...
+[15:16:42] 🚀 Starting up repository: 'payslip-manager', branch: 'feature/streamlit-cloud-deployment', main module: 'streamlit_app.py'
+[15:16:42] 🐙 Cloning repository...
+[15:16:44] 🐙 Cloning into '/mount/src/payslip-manager'...
+Warning: Permanently added the ED25519 host key for IP address '140.82.116.4' to the list of known hosts.
+
+[15:16:44] 🐙 Cloned repository!
+[15:16:44] 🐙 Pulling code changes from Github...
+[15:16:46] 📦 Processing dependencies...
+
+──────────────────────────────────────── uv ───────────────────────────────────────────
+
+Using uv pip install.
+Using Python 3.13.5 environment at /home/adminuser/venv
+Resolved 99 packages in 1.03s
+  × Failed to download and build `pandas==2.1.4`
+  ╰─▶ Build backend failed to build wheel through `build_wheel` (exit status:
+      1)
+
+      [stdout]
+      + meson setup
+      /home/adminuser/.cache/uv/sdists-v6/pypi/pandas/2.1.4/vIay8zc8GZAZYj-Lnbwzi/src
+      /home/adminuser/.cache/uv/sdists-v6/pypi/pandas/2.1.4/vIay8zc8GZAZYj-Lnbwzi/src/.mesonpy-o4axh3t1/build
+      -Dbuildtype=release -Db_ndebug=if-release -Db_vscrt=md --vsenv
+      --native-file=/home/adminuser/.cache/uv/sdists-v6/pypi/pandas/2.1.4/vIay8zc8GZAZYj-Lnbwzi/src/.mesonpy-o4axh3t1/build/meson-python-native-file.ini
+      The Meson build system
+      Version: 1.2.1
+      Source dir:
+      /home/adminuser/.cache/uv/sdists-v6/pypi/pandas/2.1.4/vIay8zc8GZAZYj-Lnbwzi/src
+      Build dir:
+      /home/adminuser/.cache/uv/sdists-v6/pypi/pandas/2.1.4/vIay8zc8GZAZYj-Lnbwzi/src/.mesonpy-o4axh3t1/build
+      Build type: native build
+      Project name: pandas
+      Project version: 2.1.4
+      C compiler for the host machine: cc (gcc 10.2.1 "cc (Debian 10.2.1-6)
+      10.2.1 20210110")
+      C linker for the host machine: cc ld.bfd 2.35.2
+      C++ compiler for the host machine: c++ (gcc 10.2.1 "c++ (Debian
+      10.2.1-6) 10.2.1 20210110")
+      C++ linker for the host machine: c++ ld.bfd 2.35.2
+      Cython compiler for the host machine: cython (cython 0.29.37)
+      Host machine cpu family: x86_64
+      Host machine cpu: x86_64
+      Program python found: YES
+      (/home/adminuser/.cache/uv/builds-v0/.tmpj42tRw/bin/python)
+      Did not find pkg-config by name 'pkg-config'
+      Found Pkg-config: NO
+      Run-time dependency python found: YES 3.13
+      Build targets in project: 53
+
+      pandas 2.1.4
+
+        User defined options
+          Native files:
+      /home/adminuser/.cache/uv/sdists-v6/pypi/pandas/2.1.4/vIay8zc8GZAZYj-Lnbwzi/src/.mesonpy-o4axh3t1/build/meson-python-native-file.ini
+          buildtype   : release
+          vsenv       : True
+          b_ndebug    : if-release
+          b_vscrt     : md
+
+      Found ninja-1.11.1.git.kitware.jobserver-1 at
+      /home/adminuser/.cache/uv/builds-v0/.tmpj42tRw/bin/ninja
+
+      Visual Studio environment is needed to run Ninja. It is recommended to
+      use Meson wrapper:
+      /home/adminuser/.cache/uv/builds-v0/.tmpj42tRw/bin/meson compile -C .
+      + /home/adminuser/.cache/uv/builds-v0/.tmpj42tRw/bin/ninja
+      [1/151] Generating pandas/_libs/hashtable_class_helper_pxi with a custom
+      command
+      [2/151] Generating pandas/__init__.py with a custom command
+      [3/151] Generating pandas/_libs/algos_common_helper_pxi with a custom
+      command
+      [4/151] Generating pandas/_libs/khash_primitive_helper_pxi with a custom
+      command
+      [5/151] Generating pandas/_libs/index_class_helper_pxi with a custom
+      command
+      [6/151] Generating pandas/_libs/intervaltree_helper_pxi with a custom
+      command
+      [7/151] Generating pandas/_libs/hashtable_func_helper_pxi with a custom
+      command
+      [8/151] Generating pandas/_libs/algos_take_helper_pxi with a custom
+      command
+      [9/151] Generating pandas/_libs/sparse_op_helper_pxi with a custom
+      command
+      [10/151] Compiling C object
+      pandas/_libs/tslibs/parsing.cpython-313-x86_64-linux-gnu.so.p/.._src_parser_tokenizer.c.o
+      [11/151] Compiling Cython source
+      /home/adminuser/.cache/uv/sdists-v6/pypi/pandas/2.1.4/vIay8zc8GZAZYj-Lnbwzi/src/pandas/_libs/tslibs/nattype.pyx
+      [12/151] Compiling Cython source
+      /home/adminuser/.cache/uv/sdists-v6/pypi/pandas/2.1.4/vIay8zc8GZAZYj-Lnbwzi/src/pandas/_libs/tslibs/base.pyx
+      [13/151] Compiling Cython source
+      /home/adminuser/.cache/uv/sdists-v6/pypi/pandas/2.1.4/vIay8zc8GZAZYj-Lnbwzi/src/pandas/_libs/tslibs/ccalendar.pyx
+      [14/151] Compiling Cython source
+      /home/adminuser/.cache/uv/sdists-v6/pypi/pandas/2.1.4/vIay8zc8GZAZYj-Lnbwzi/src/pandas/_libs/tslibs/dtypes.pyx
+      [15/151] Compiling C object
+      pandas/_libs/tslibs/base.cpython-313-x86_64-linux-gnu.so.p/meson-generated_pandas__libs_tslibs_base.pyx.c.o
+      FAILED:
+      pandas/_libs/tslibs/base.cpython-313-x86_64-linux-gnu.so.p/meson-generated_pandas__libs_tslibs_base.pyx.c.o
+      cc -Ipandas/_libs/tslibs/base.cpython-313-x86_64-linux-gnu.so.p
+      -Ipandas/_libs/tslibs -I../../pandas/_libs/tslibs
+      -I../../../../../../../../builds-v0/.tmpj42tRw/lib/python3.13/site-packages/numpy/core/include
+      -I../../pandas/_libs/include -I/usr/local/include/python3.13
+      -fvisibility=hidden -fdiagnostics-color=always -DNDEBUG
+      -D_FILE_OFFSET_BITS=64 -w -std=c99 -O3 -DNPY_NO_DEPRECATED_API=0
+      -DNPY_TARGET_VERSION=NPY_1_21_API_VERSION -fPIC -MD -MQ
+      pandas/_libs/tslibs/base.cpython-313-x86_64-linux-gnu.so.p/meson-generated_pandas__libs_tslibs_base.pyx.c.o
+      -MF
+      pandas/_libs/tslibs/base.cpython-313-x86_64-linux-gnu.so.p/meson-generated_pandas__libs_tslibs_base.pyx.c.o.d
+      -o
+      pandas/_libs/tslibs/base.cpython-313-x86_64-linux-gnu.so.p/meson-generated_pandas__libs_tslibs_base.pyx.c.o
+      -c
+      pandas/_libs/tslibs/base.cpython-313-x86_64-linux-gnu.so.p/pandas/_libs/tslibs/base.pyx.c
+      pandas/_libs/tslibs/base.cpython-313-x86_64-linux-gnu.so.p/pandas/_libs/tslibs/base.pyx.c:
+      In function ‘__Pyx_PyInt_As_long’:
+      pandas/_libs/tslibs/base.cpython-313-x86_64-linux-gnu.so.p/pandas/_libs/tslibs/base.pyx.c:5397:27:
+      error: too few arguments to function ‘_PyLong_AsByteArray’
+       5397 |                 int ret = _PyLong_AsByteArray((PyLongObject *)v,
+            |                           ^~~~~~~~~~~~~~~~~~~
+      In file included from /usr/local/include/python3.13/longobject.h:107,
+                       from /usr/local/include/python3.13/Python.h:81,
+                       from
+      pandas/_libs/tslibs/base.cpython-313-x86_64-linux-gnu.so.p/pandas/_libs/tslibs/base.pyx.c:6:
+      [2025-06-18 15:19:44.424345] /usr/local/include/python3.13/cpython/longobject.h:111:17: note:
+      declared here
+        111 | PyAPI_FUNC(int) _PyLong_AsByteArray(PyLongObject* v,
+            |                 ^~~~~~~~~~~~~~~~~~~
+      pandas/_libs/tslibs/base.cpython-313-x86_64-linux-gnu.so.p/pandas/_libs/tslibs/base.pyx.c:
+      In function ‘__Pyx_PyInt_As_int’:
+      pandas/_libs/tslibs/base.cpython-313-x86_64-linux-gnu.so.p/pandas/_libs/tslibs/base.pyx.c:5631:27:
+      error: too few arguments to function ‘_PyLong_AsByteArray’
+       5631 |                 int ret = _PyLong_AsByteArray((PyLongObject *)v,
+            |                           ^~~~~~~~~~~~~~~~~~~
+      In file included from /usr/local/include/python3.13/longobject.h:107,
+                       from /usr/local/include/python3.13/Python.h:81,
+                       from
+      pandas/_libs/tslibs/base.cpython-313-x86_64-linux-gnu.so.p/pandas/_libs/tslibs/base.pyx.c:6:
+      /usr/local/include/python3.13/cpython/longobject.h:111:17: note:
+      declared here
+        111 | PyAPI_FUNC(int) _PyLong_AsByteArray(PyLongObject* v,
+            |                 ^~~~~~~~~~~~~~~~~~~
+      [16/151] Compiling C object
+      pandas/_libs/tslibs/dtypes.cpython-313-x86_64-linux-gnu.so.p/meson-generated_pandas__libs_tslibs_dtypes.pyx.c.o
+      FAILED:
+      pandas/_libs/tslibs/dtypes.cpython-313-x86_64-linux-gnu.so.p/meson-generated_pandas__libs_tslibs_dtypes.pyx.c.o
+      cc -Ipandas/_libs/tslibs/dtypes.cpython-313-x86_64-linux-gnu.so.p
+      -Ipandas/_libs/tslibs -I../../pandas/_libs/tslibs
+      -I../../../../../../../../builds-v0/.tmpj42tRw/lib/python3.13/site-packages/numpy/core/include
+      -I../../pandas/_libs/include -I/usr/local/include/python3.13
+      -fvisibility=hidden -fdiagnostics-color=always -DNDEBUG
+      -D_FILE_OFFSET_BITS=64 -w -std=c99 -O3 -DNPY_NO_DEPRECATED_API=0
+      -DNPY_TARGET_VERSION=NPY_1_21_API_VERSION -fPIC -MD -MQ
+      pandas/_libs/tslibs/dtypes.cpython-313-x86_64-linux-gnu.so.p/meson-generated_pandas__libs_tslibs_dtypes.pyx.c.o
+      -MF
+      pandas/_libs/tslibs/dtypes.cpython-313-x86_64-linux-gnu.so.p/meson-generated_pandas__libs_tslibs_dtypes.pyx.c.o.d
+      -o
+      pandas/_libs/tslibs/dtypes.cpython-313-x86_64-linux-gnu.so.p/meson-generated_pandas__libs_tslibs_dtypes.pyx.c.o
+      -c
+      pandas/_libs/tslibs/dtypes.cpython-313-x86_64-linux-gnu.so.p/pandas/_libs/tslibs/dtypes.pyx.c
+      pandas/_libs/tslibs/dtypes.cpython-313-x86_64-linux-gnu.so.p/pandas/_libs/tslibs/dtypes.pyx.c:
+      In function
+      ‘__Pyx_PyInt_As_enum____pyx_t_6pandas_5_libs_6tslibs_6dtypes_PeriodDtypeCode’:
+      pandas/_libs/tslibs/dtypes.cpython-313-x86_64-linux-gnu.so.p/pandas/_libs/tslibs/dtypes.pyx.c:16379:27:
+      error: too few arguments to function ‘_PyLong_AsByteArray’
+      16379 |                 int ret = _PyLong_AsByteArray((PyLongObject *)v,
+            |                           ^~~~~~~~~~~~~~~~~~~
+      In file included from /usr/local/include/python3.13/longobject.h:107,
+                       from /usr/local/include/python3.13/Python.h:81,
+                       from
+      pandas/_libs/tslibs/dtypes.cpython-313-x86_64-linux-gnu.so.p/pandas/_libs/tslibs/dtypes.pyx.c:6:
+      /usr/local/include/python3.13/cpython/longobject.h:111:17: note:
+      declared here
+        111 | PyAPI_FUNC(int) _PyLong_AsByteArray(PyLongObject* v,
+            |                 ^~~~~~~~~~~~~~~~~~~
+      pandas/_libs/tslibs/dtypes.cpython-313-x86_64-linux-gnu.so.p/pandas/_libs/tslibs/dtypes.pyx.c:
+      In function ‘__Pyx_PyInt_As_npy_int64’:
+      pandas/_libs/tslibs/dtypes.cpython-313-x86_64-linux-gnu.so.p/pandas/_libs/tslibs/dtypes.pyx.c:16575:27:
+      error: too few arguments to function ‘_PyLong_AsByteArray’
+      16575 |                 int ret = _PyLong_AsByteArray((PyLongObject *)v,
+            |                           ^~~~~~~~~~~~~~~~~~~
+      In file included from /usr/local/include/python3.13/longobject.h:107,
+                       from /usr/local/include/python3.13/Python.h:81,
+                       from
+      pandas/_libs/tslibs/dtypes.cpython-313-x86_64-linux-gnu.so.p/pandas/_libs/tslibs/dtypes.pyx.c:6:
+      /usr/local/include/python3.13/cpython/longobject.h:111:17: note:
+      declared here
+        111 | PyAPI_FUNC(int) _PyLong_AsByteArray(PyLongObject* v,
+            |                 ^~~~~~~~~~~~~~~~~~~
+      pandas/_libs/tslibs/dtypes.cpython-313-x86_64-linux-gnu.so.p/pandas/_libs/tslibs/dtypes.pyx.c:
+      In function ‘__Pyx_PyInt_As_NPY_DATETIMEUNIT’:
+      pandas/_libs/tslibs/dtypes.cpython-313-x86_64-linux-gnu.so.p/pandas/_libs/tslibs/dtypes.pyx.c:16923:27:
+      error: too few arguments to function ‘_PyLong_AsByteArray’
+      16923 |                 int ret = _PyLong_AsByteArray((PyLongObject *)v,
+            |                           ^~~~~~~~~~~~~~~~~~~
+      In file included from /usr/local/include/python3.13/longobject.h:107,
+                       from /usr/local/include/python3.13/Python.h:81,
+                       from
+      pandas/_libs/tslibs/dtypes.cpython-313-x86_64-linux-gnu.so.p/pandas/_libs/tslibs/dtypes.pyx.c:6[2025-06-18 15:19:44.424648] :
+      /usr/local/include/python3.13/cpython/longobject.h:111:17: note:
+      declared here
+        111 | PyAPI_FUNC(int) _PyLong_AsByteArray(PyLongObject* v,
+            |                 ^~~~~~~~~~~~~~~~~~~
+      pandas/_libs/tslibs/dtypes.cpython-313-x86_64-linux-gnu.so.p/pandas/_libs/tslibs/dtypes.pyx.c:
+      In function ‘__Pyx_PyInt_As_int’:
+      pandas/_libs/tslibs/dtypes.cpython-313-x86_64-linux-gnu.so.p/pandas/_libs/tslibs/dtypes.pyx.c:17195:27:
+      error: too few arguments to function ‘_PyLong_AsByteArray’
+      17195 |                 int ret = _PyLong_AsByteArray((PyLongObject *)v,
+            |                           ^~~~~~~~~~~~~~~~~~~
+      In file included from /usr/local/include/python3.13/longobject.h:107,
+                       from /usr/local/include/python3.13/Python.h:81,
+                       from
+      pandas/_libs/tslibs/dtypes.cpython-313-x86_64-linux-gnu.so.p/pandas/_libs/tslibs/dtypes.pyx.c:6:
+      /usr/local/include/python3.13/cpython/longobject.h:111:17: note:
+      declared here
+        111 | PyAPI_FUNC(int) _PyLong_AsByteArray(PyLongObject* v,
+            |                 ^~~~~~~~~~~~~~~~~~~
+      pandas/_libs/tslibs/dtypes.cpython-313-x86_64-linux-gnu.so.p/pandas/_libs/tslibs/dtypes.pyx.c:
+      In function ‘__Pyx_PyInt_As_long’:
+      pandas/_libs/tslibs/dtypes.cpython-313-x86_64-linux-gnu.so.p/pandas/_libs/tslibs/dtypes.pyx.c:17429:27:
+      error: too few arguments to function ‘_PyLong_AsByteArray’
+      17429 |                 int ret = _PyLong_AsByteArray((PyLongObject *)v,
+            |                           ^~~~~~~~~~~~~~~~~~~
+      In file included from /usr/local/include/python3.13/longobject.h:107,
+                       from /usr/local/include/python3.13/Python.h:81,
+                       from
+      pandas/_libs/tslibs/dtypes.cpython-313-x86_64-linux-gnu.so.p/pandas/_libs/tslibs/dtypes.pyx.c:6:
+      /usr/local/include/python3.13/cpython/longobject.h:111:17: note:
+      declared here
+        111 | PyAPI_FUNC(int) _PyLong_AsByteArray(PyLongObject* v,
+            |                 ^~~~~~~~~~~~~~~~~~~
+      [17/151] Compiling C object
+      pandas/_libs/tslibs/nattype.cpython-313-x86_64-linux-gnu.so.p/meson-generated_pandas__libs_tslibs_nattype.pyx.c.o
+      FAILED:
+      pandas/_libs/tslibs/nattype.cpython-313-x86_64-linux-gnu.so.p/meson-generated_pandas__libs_tslibs_nattype.pyx.c.o
+      cc -Ipandas/_libs/tslibs/nattype.cpython-313-x86_64-linux-gnu.so.p
+      -Ipandas/_libs/tslibs -I../../pandas/_libs/tslibs
+      -I../../../../../../../../builds-v0/.tmpj42tRw/lib/python3.13/site-packages/numpy/core/include
+      -I../../pandas/_libs/include -I/usr/local/include/python3.13
+      -fvisibility=hidden -fdiagnostics-color=always -DNDEBUG
+      -D_FILE_OFFSET_BITS=64 -w -std=c99 -O3 -DNPY_NO_DEPRECATED_API=0
+      -DNPY_TARGET_VERSION=NPY_1_21_API_VERSION -fPIC -MD -MQ
+      pandas/_libs/tslibs/nattype.cpython-313-x86_64-linux-gnu.so.p/meson-generated_pandas__libs_tslibs_nattype.pyx.c.o
+      -MF
+      pandas/_libs/tslibs/nattype.cpython-313-x86_64-linux-gnu.so.p/meson-generated_pandas__libs_tslibs_nattype.pyx.c.o.d
+      -o
+      pandas/_libs/tslibs/nattype.cpython-313-x86_64-linux-gnu.so.p/meson-generated_pandas__libs_tslibs_nattype.pyx.c.o
+      -c
+      pandas/_libs/tslibs/nattype.cpython-313-x86_64-linux-gnu.so.p/pandas/_libs/tslibs/nattype.pyx.c
+      pandas/_libs/tslibs/nattype.cpython-313-x86_64-linux-gnu.so.p/pandas/_libs/tslibs/nattype.pyx.c:
+      In function ‘__Pyx_PyInt_As_npy_int64’:
+      pandas/_libs/tslibs/nattype.cpython-313-x86_64-linux-gnu.so.p/pandas/_libs/tslibs/nattype.pyx.c:20808:27:
+      error: too few arguments to function ‘_PyLong_AsByteArray’
+      20808 |                 int ret = _PyLong_AsByteArray((PyLongObject *)v,
+            |                           ^~~~~~~~~~~~~~~~~~~
+      In file included from /usr/local/include/python3.13/longobject.h:107,
+                       from /usr/local/include/python3.13/Python.h:81,
+                       from
+      pandas/_libs/tslibs/nattype.cpython-313-x86_64-linux-gnu.so.p/pandas/_libs/tslibs/nattype.pyx.c:6:
+      /usr/local/include/python3.13/cpython/longobject.h:111:17: note:
+      declared here
+        111 | PyAPI_FUNC(int) _PyLong_AsByteArray(PyLongObject* v,
+            |                 ^~~~~~~~~~~~~~~~~~~
+      pandas/_libs/tslibs/nattype.cpython-313-x86_64-linux-gnu.so.p/pandas/_libs/tslibs/nattype.pyx.c:
+      In function ‘__Pyx_PyInt_As_int’:
+      pandas/_libs/tslibs/nattype.cpython-313-x86_64-linux-gnu.so.p/pandas/_libs/tslibs/nattype.pyx.c:21004:27:
+      error: too few arguments to function ‘_PyLong_AsByteArray’
+      21004 |                 int ret = _PyLong_AsByteArray[2025-06-18 15:19:44.424924] ((PyLongObject *)v,
+            |                           ^~~~~~~~~~~~~~~~~~~
+      In file included from /usr/local/include/python3.13/longobject.h:107,
+                       from /usr/local/include/python3.13/Python.h:81,
+                       from
+      pandas/_libs/tslibs/nattype.cpython-313-x86_64-linux-gnu.so.p/pandas/_libs/tslibs/nattype.pyx.c:6:
+      /usr/local/include/python3.13/cpython/longobject.h:111:17: note:
+      declared here
+        111 | PyAPI_FUNC(int) _PyLong_AsByteArray(PyLongObject* v,
+            |                 ^~~~~~~~~~~~~~~~~~~
+      pandas/_libs/tslibs/nattype.cpython-313-x86_64-linux-gnu.so.p/pandas/_libs/tslibs/nattype.pyx.c:
+      In function ‘__Pyx_PyInt_As_long’:
+      pandas/_libs/tslibs/nattype.cpython-313-x86_64-linux-gnu.so.p/pandas/_libs/tslibs/nattype.pyx.c:21200:27:
+      error: too few arguments to function ‘_PyLong_AsByteArray’
+      21200 |                 int ret = _PyLong_AsByteArray((PyLongObject *)v,
+            |                           ^~~~~~~~~~~~~~~~~~~
+      In file included from /usr/local/include/python3.13/longobject.h:107,
+                       from /usr/local/include/python3.13/Python.h:81,
+                       from
+      pandas/_libs/tslibs/nattype.cpython-313-x86_64-linux-gnu.so.p/pandas/_libs/tslibs/nattype.pyx.c:6:
+      /usr/local/include/python3.13/cpython/longobject.h:111:17: note:
+      declared here
+        111 | PyAPI_FUNC(int) _PyLong_AsByteArray(PyLongObject* v,
+            |                 ^~~~~~~~~~~~~~~~~~~
+      [18/151] Compiling C object
+      pandas/_libs/tslibs/ccalendar.cpython-313-x86_64-linux-gnu.so.p/meson-generated_pandas__libs_tslibs_ccalendar.pyx.c.o
+      FAILED:
+      pandas/_libs/tslibs/ccalendar.cpython-313-x86_64-linux-gnu.so.p/meson-generated_pandas__libs_tslibs_ccalendar.pyx.c.o
+      cc -Ipandas/_libs/tslibs/ccalendar.cpython-313-x86_64-linux-gnu.so.p
+      -Ipandas/_libs/tslibs -I../../pandas/_libs/tslibs
+      -I../../../../../../../../builds-v0/.tmpj42tRw/lib/python3.13/site-packages/numpy/core/include
+      -I../../pandas/_libs/include -I/usr/local/include/python3.13
+      -fvisibility=hidden -fdiagnostics-color=always -DNDEBUG
+      -D_FILE_OFFSET_BITS=64 -w -std=c99 -O3 -DNPY_NO_DEPRECATED_API=0
+      -DNPY_TARGET_VERSION=NPY_1_21_API_VERSION -fPIC -MD -MQ
+      pandas/_libs/tslibs/ccalendar.cpython-313-x86_64-linux-gnu.so.p/meson-generated_pandas__libs_tslibs_ccalendar.pyx.c.o
+      -MF
+      pandas/_libs/tslibs/ccalendar.cpython-313-x86_64-linux-gnu.so.p/meson-generated_pandas__libs_tslibs_ccalendar.pyx.c.o.d
+      -o
+      pandas/_libs/tslibs/ccalendar.cpython-313-x86_64-linux-gnu.so.p/meson-generated_pandas__libs_tslibs_ccalendar.pyx.c.o
+      -c
+      pandas/_libs/tslibs/ccalendar.cpython-313-x86_64-linux-gnu.so.p/pandas/_libs/tslibs/ccalendar.pyx.c
+      pandas/_libs/tslibs/ccalendar.cpython-313-x86_64-linux-gnu.so.p/pandas/_libs/tslibs/ccalendar.pyx.c:
+      In function ‘__Pyx_PyInt_As_int’:
+      pandas/_libs/tslibs/ccalendar.cpython-313-x86_64-linux-gnu.so.p/pandas/_libs/tslibs/ccalendar.pyx.c:7376:27:
+      error: too few arguments to function ‘_PyLong_AsByteArray’
+       7376 |                 int ret = _PyLong_AsByteArray((PyLongObject *)v,
+            |                           ^~~~~~~~~~~~~~~~~~~
+      In file included from /usr/local/include/python3.13/longobject.h:107,
+                       from /usr/local/include/python3.13/Python.h:81,
+                       from
+      pandas/_libs/tslibs/ccalendar.cpython-313-x86_64-linux-gnu.so.p/pandas/_libs/tslibs/ccalendar.pyx.c:6:
+      /usr/local/include/python3.13/cpython/longobject.h:111:17: note:
+      declared here
+        111 | PyAPI_FUNC(int) _PyLong_AsByteArray(PyLongObject* v,
+            |                 ^~~~~~~~~~~~~~~~~~~
+      pandas/_libs/tslibs/ccalendar.cpython-313-x86_64-linux-gnu.so.p/pandas/_libs/tslibs/ccalendar.pyx.c:
+      In function ‘__Pyx_PyInt_As_long’:
+      pandas/_libs/tslibs/ccalendar.cpython-313-x86_64-linux-gnu.so.p/pandas/_libs/tslibs/ccalendar.pyx.c:7686:27:
+      error: too few arguments to function ‘_PyLong_AsByteArray’
+       7686 |                 int ret = _PyLong_AsByteArray((PyLongObject *)v,
+            |                           ^~~~~~~~~~~~~~~~~~~
+      In file included from /usr/local/include/python3.13/longobject.h:107,
+                       from /usr/local/include/python3.13/Python.h:81,
+                       from
+      [2025-06-18 15:19:44.425161] pandas/_libs/tslibs/ccalendar.cpython-313-x86_64-linux-gnu.so.p/pandas/_libs/tslibs/ccalendar.pyx.c:6:
+      /usr/local/include/python3.13/cpython/longobject.h:111:17: note:
+      declared here
+        111 | PyAPI_FUNC(int) _PyLong_AsByteArray(PyLongObject* v,
+            |                 ^~~~~~~~~~~~~~~~~~~
+      [19/151] Compiling Cython source
+      /home/adminuser/.cache/uv/sdists-v6/pypi/pandas/2.1.4/vIay8zc8GZAZYj-Lnbwzi/src/pandas/_libs/tslibs/np_datetime.pyx
+      [20/151] Compiling Cython source
+      /home/adminuser/.cache/uv/sdists-v6/pypi/pandas/2.1.4/vIay8zc8GZAZYj-Lnbwzi/src/pandas/_libs/tslibs/vectorized.pyx
+      [21/151] Compiling Cython source
+      /home/adminuser/.cache/uv/sdists-v6/pypi/pandas/2.1.4/vIay8zc8GZAZYj-Lnbwzi/src/pandas/_libs/tslibs/fields.pyx
+      [22/151] Compiling Cython source
+      /home/adminuser/.cache/uv/sdists-v6/pypi/pandas/2.1.4/vIay8zc8GZAZYj-Lnbwzi/src/pandas/_libs/tslibs/timezones.pyx
+      [23/151] Compiling Cython source
+      /home/adminuser/.cache/uv/sdists-v6/pypi/pandas/2.1.4/vIay8zc8GZAZYj-Lnbwzi/src/pandas/_libs/arrays.pyx
+      [24/151] Compiling Cython source
+      /home/adminuser/.cache/uv/sdists-v6/pypi/pandas/2.1.4/vIay8zc8GZAZYj-Lnbwzi/src/pandas/_libs/tslibs/strptime.pyx
+      [25/151] Compiling Cython source
+      /home/adminuser/.cache/uv/sdists-v6/pypi/pandas/2.1.4/vIay8zc8GZAZYj-Lnbwzi/src/pandas/_libs/tslibs/conversion.pyx
+      [26/151] Compiling Cython source
+      /home/adminuser/.cache/uv/sdists-v6/pypi/pandas/2.1.4/vIay8zc8GZAZYj-Lnbwzi/src/pandas/_libs/tslibs/tzconversion.pyx
+      [27/151] Compiling Cython source
+      /home/adminuser/.cache/uv/sdists-v6/pypi/pandas/2.1.4/vIay8zc8GZAZYj-Lnbwzi/src/pandas/_libs/tslibs/offsets.pyx
+      [28/151] Compiling Cython source
+      /home/adminuser/.cache/uv/sdists-v6/pypi/pandas/2.1.4/vIay8zc8GZAZYj-Lnbwzi/src/pandas/_libs/tslibs/parsing.pyx
+      [29/151] Compiling Cython source
+      /home/adminuser/.cache/uv/sdists-v6/pypi/pandas/2.1.4/vIay8zc8GZAZYj-Lnbwzi/src/pandas/_libs/tslibs/timestamps.pyx
+      [30/151] Compiling Cython source
+      /home/adminuser/.cache/uv/sdists-v6/pypi/pandas/2.1.4/vIay8zc8GZAZYj-Lnbwzi/src/pandas/_libs/tslibs/period.pyx
+      [31/151] Compiling Cython source
+      /home/adminuser/.cache/uv/sdists-v6/pypi/pandas/2.1.4/vIay8zc8GZAZYj-Lnbwzi/src/pandas/_libs/tslibs/timedeltas.pyx
+      [32/151] Compiling Cython source
+      /home/adminuser/.cache/uv/sdists-v6/pypi/pandas/2.1.4/vIay8zc8GZAZYj-Lnbwzi/src/pandas/_libs/algos.pyx
+      ninja: build stopped: subcommand failed.
+
+Checking if Streamlit is installed
+Installing rich for an improved exception logging
+Using uv pip install.
+Using Python 3.13.5 environment at /home/adminuser/venv
+Resolved 4 packages in 65ms
+Prepared 1 package in 46ms
+Installed 4 packages in 19ms
+ + markdown-it-py==3.0.0
+ [2025-06-18 15:19:44.605831] + mdurl==0.1.2
+ + pygments==2.19.1
+ + rich==14.0.0
+
+────────────────────────────────────────────────────────────────────────────────────────
+
+
+──────────────────────────────────────── pip ───────────────────────────────────────────
+
+Using standard pip install.
+Collecting streamlit==1.37.0 (from -r /mount/src/payslip-manager/requirements.txt (line 2))
+  Downloading streamlit-1.37.0-py2.py3-none-any.whl.metadata (8.5 kB)
+Collecting pandas==2.1.4 (from -r /mount/src/payslip-manager/requirements.txt (line 3))
+  Downloading pandas-2.1.4.tar.gz (4.3 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 4.3/4.3 MB 56.0 MB/s eta 0:00:00[2025-06-18 15:19:46.125875] 
+  Installing build dependencies: started
+  Installing build dependencies: still running...
+  Installing build dependencies: still running...
+  Installing build dependencies: finished with status 'done'
+  Getting requirements to build wheel: started
+  Getting requirements to build wheel: finished with status 'done'
+  Installing backend dependencies: started
+  Installing backend dependencies: finished with status 'done'
+  Preparing metadata (pyproject.toml): started
+  Preparing metadata (pyproject.toml): finished with status 'error'
+  error: subprocess-exited-with-error
+  
+  × Preparing metadata (pyproject.toml) did not run successfully.
+  │ exit code: 1
+  ╰─> [86 lines of output]
+      + meson setup /tmp/pip-install-k8vh_b8s/pandas_7d333b15f6604bd18734bf9b77738cc6 /tmp/pip-install-k8vh_b8s/pandas_7d333b15f6604bd18734bf9b77738cc6/.mesonpy-spcmc2ae/build -Dbuildtype=release -Db_ndebug=if-release -Db_vscrt=md --vsenv --native-file=/tmp/pip-install-k8vh_b8s/pandas_7d333b15f6604bd18734bf9b77738cc6/.mesonpy-spcmc2ae/build/meson-python-native-file.ini
+      The Meson build system
+      Version: 1.2.1
+      Source dir: /tmp/pip-install-k8vh_b8s/pandas_7d333b15f6604bd18734bf9b77738cc6
+      Build dir: /tmp/pip-install-k8vh_b8s/pandas_7d333b15f6604bd18734bf9b77738cc6/.mesonpy-spcmc2ae/build
+      Build type: native build
+      Project name: pandas
+      Project version: 2.1.4
+      C compiler for the host machine: cc (gcc 10.2.1 "cc (Debian 10.2.1-6) 10.2.1 20210110")
+      C linker for the host machine: cc ld.bfd 2.35.2
+      C++ compiler for the host machine: c++ (gcc 10.2.1 "c++ (Debian 10.2.1-6) 10.2.1 20210110")
+      C++ linker for the host machine: c++ ld.bfd 2.35.2
+      Cython compiler for the host machine: cython (cython 0.29.37)
+      Host machine cpu family: x86_64
+      Host machine cpu: x86_64
+      Program python found: YES (/home/adminuser/venv/bin/python)
+      Did not find pkg-config by name 'pkg-config'
+      Found Pkg-config: NO
+      Run-time dependency python found: YES 3.13
+      Build targets in project: 53
+      
+      pandas 2.1.4
+      
+        User defined options
+          Native files: /tmp/pip-install-k8vh_b8s/pandas_7d333b15f6604bd18734bf9b77738cc6/.mesonpy-spcmc2ae/build/meson-python-native-file.ini
+          buildtype   : release
+          vsenv       : True
+          b_ndebug    : if-release
+          b_vscrt     : md
+      
+      Found ninja-1.11.1.git.kitware.jobserver-1 at /tmp/pip-build-env-kh8mgz0d/normal/bin/ninja
+      
+      Visual Studio environment is needed to run Ninja. It is recommended to use Meson wrapper:
+      /tmp/pip-build-env-kh8mgz0d/overlay/bin/meson compile -C .
+      + /tmp/pip-build-env-kh8mgz0d/normal/bin/ninja
+      [1/151] Generating pandas/_libs/algos_common_helper_pxi with a custom command
+      [2/151] Generating pandas/_libs/algos_take_helper_pxi with a custom command
+      [3/151] Generating pandas/_libs/khash_primitive_helper_pxi with a custom command
+      [4/151] Generating pandas/__init__.py with a custom command
+      [5/151] Generating pandas/_libs/hashtable_func_helper_pxi with a custom command
+      [6/151] Generating pandas/_libs/sparse_op_helper_pxi with a custom command
+      [7/151] Generating pandas/_libs/index_class_helper_pxi with a custom command
+      [8/151] Generating pandas/_libs/intervaltree_helper_pxi with a custom command
+      [9/151] Generating pandas/_libs/hashtable_class_helper_pxi with a custom command
+      [10/151] Compiling Cython source /tmp/pip-install-k8vh_b8s/pandas_7d333b15f6604bd18734bf9b77738cc6/pandas/_libs/tslibs/base.pyx
+      [11/151] Compiling C object pandas/_libs/tslibs/base.cpython-313-x86_64-linux-gnu.so.p/meson-generated_pandas__libs_tslibs_base.pyx.c.o
+      FAILED: pandas/_libs/tslibs/base.cpython-313-x86_64-linux-gnu.so.p/meson-generated_pandas__libs_tslibs_base.pyx.c.o
+      cc -Ipandas/_libs/tslibs/base.cpython-313-x86_64-linux-gnu.so.p -Ipandas/_libs/tslibs -I../../pandas/_libs/tslibs -I../../../../pip-build-env-kh8mgz0d/overlay/lib/python3.13/site-packages/numpy/core/include -I../../pandas/_libs/include -I/usr/local/include/python3.13 -fvisibility=hidden -fdiagnostics-color=always -DNDEBUG -D_FILE_OFFSET_BITS=64 -w -std=c99 -O3 -DNPY_NO_DEPRECATED_API=0 -DNPY_TARGET_VERSION=NPY_1_21_API_VERSION -fPIC -MD -MQ pandas/_libs/tslibs/base.cpython-313-x86_64-linux-gnu.so.p/meson-generated_pandas__libs_tslibs_base.pyx.c.o -MF pandas/_libs/tslibs/base.cpython-313-x86_64-linux-gnu.so.p/meson-generated_pandas__libs_tslibs_base.pyx.c.o.d -o pandas/_libs/tslibs/base.cpython-313-x86_64-linux-gnu.so.p/meson-generated_pandas__libs_tslibs_base.pyx.c.o -c pandas/_libs/tslibs/base.cpython-313-x86_64-linux-gnu.so.p/pandas/_libs/tslibs/base.pyx.c
+      pandas/_libs/tslibs/base.cpython-313-x86_64-linux-gnu.so.p/pandas/_libs/tslibs/base.pyx.c: In function ‘__Pyx_PyInt_As_long’:
+      pandas/_libs/tslibs/base.cpython-313-x86_64-linux-gnu.so.p/pandas/_libs/tslibs/base.pyx.c:5397:27: error: too few arguments to function ‘_PyLong_AsByteArray’
+       5397 |                 int ret = _PyLong_AsByteArray((PyLongObject *)v,
+            |                           ^~~~~~~~~~~~~~~~~~~
+      In file included from /usr/local/include/python3.13/longobject.h:107,
+                       from /usr/local/include/python3.13/Python.h:81,
+                       from pandas/_libs/tslibs/base.cpython-313-x86_64-linux-gnu.so.p/pandas/_libs/tslibs/base.pyx.c:6:
+      /usr/local/include/python3.13/cpython/longobject.h:111:17: note: declared here
+        111 | PyAPI_FUNC(int) _PyLong_AsByteArray(PyLongObject* v,
+            |                 ^~~~~~~~~~~~~~~~~~~
+      pandas/_libs/tslibs/base.cpython-313-x86_64-linux-gnu.so.p/pandas/_libs/tslibs/base.pyx.c: In function ‘__Pyx_PyInt_As_int’:
+      pandas/_libs/tslibs/base.cpython-313-x86_64-linux-gnu.so.p/pandas/_libs/tslibs/base.pyx.c:5631:27: error: too few arguments to function ‘_PyLong_AsByteArray’
+       5631 |                 int ret = _PyLong_AsByteArray((PyLongObject *)v,
+            |                           ^~~~~~~~~~~~~~~~~~~
+      In file included from /usr/local/include/python3.13/longobject.h:107,
+                       from /usr/local/include/python3.13/Python.h:81,
+                       from pandas/_libs/tslibs/base.cpython-313-x86_64-linux-gnu.so.p/pandas/_libs/tslibs/base.pyx.c:6:
+      /usr/local/include/python3.13/cpython/longobject.h:111:17: note: declared here
+        111 | PyAPI_FUNC(int) _PyLong_AsByteArray(PyLongObject* v,
+            |                 ^~~~~~~~~~~~~~~~~~~
+      [12/151] Compiling C object pandas/_libs/tslibs/parsing.cpython-313-x86_64-linux-gnu.so.p/.._src_parser_tokenizer.c.o
+      [13/151] Compiling Cython source /tmp/pip-install-k8vh_b8s/pandas_7d333b15f6604bd18734bf9b77738cc6/pandas/_libs/tslibs/nattype.pyx
+      [14/151] Compiling Cython source /tmp/pip-install-k8vh_b8s/pandas_7d333b15f6604bd18734bf9b77738cc6/pandas/_libs/tslibs/ccalendar.pyx
+      [15/151] Compiling Cython source /tmp/pip-install-k8vh_b8s/pandas_7d333b15f6604bd18734bf9b77738cc6/pandas/_libs/tslibs/dtypes.pyx
+      [16/151] Compiling Cython source /tmp/pip-install-k8vh_b8s/pandas_7d333b15f6604bd18734bf9b77738cc6/pandas/_libs/tslibs/np_datetime.pyx
+      [17/151] Compiling Cython source /tmp/pip-install-k8vh_b8s/pandas_7d333b15f6604bd18734bf9b77738cc6/pandas/_libs/tslibs/fields.pyx
+      [18/151] Compiling Cython source /tmp/pip-install-k8vh_b8s/pandas_7d333b15f6604bd18734bf9b77738cc6/pandas/_libs/tslibs/vectorized.pyx
+      [19/151] Compiling Cython source /tmp/pip-install-k8vh_b8s/pandas_7d333b15f6604bd18734bf9b77738cc6/pandas/_libs/tslibs/parsing.pyx
+      [20/151] Compiling Cython source /tmp/pip-install-k8vh_b8s/pandas_7d333b15f6604bd18734bf9b77738cc6/pandas/_libs/tslibs/timezones.pyx
+      [21/151] Compiling Cython source /tmp/pip-install-k8vh_b8s/pandas_7d333b15f6604bd18734bf9b77738cc6/pandas/_libs/tslibs/tzconversion.pyx
+      [22/151] Compiling Cython source /tmp/pip-install-k8vh_b8s/pandas_7d333b15f6604bd18734bf9b77738cc6/pandas/_libs/tslibs/strptime.pyx
+      [23/151] Compiling Cython source /tmp/pip-install-k8vh_b8s/pandas_7d333b15f6604bd18734bf9b77738cc6/pandas/_libs/tslibs/offsets.pyx
+      [24/151] Compiling Cython source /tmp/pip-install-k8vh_b8s/pandas_7d333b15f6604bd18734bf9b77738cc6/pandas/_libs/tslibs/period.pyx
+      [25/151] Compiling Cython source /tmp/pip-install-k8vh_b8s/pandas_7d333b15f6604bd18734bf9b77738cc6/pandas/_libs/tslibs/timedeltas.pyx
+      [26/151] Compiling Cython source /tmp/pip-install-k8vh_b8s/pandas_7d333b15f6604bd18734bf9b77738cc6/pandas/_libs/tslibs/conversion.pyx
+      [27/151] Compiling Cython source /tmp/pip-install-k8vh_b8s/pandas_7d333b15f6604bd18734bf9b77738cc6/pandas/_libs/tslibs/timestamps.pyx
+      [28/151] Compiling Cython source /tmp/pip-install-k8vh_b8s/pandas_7d333b15f6604bd18734bf9b77738cc6/pandas/_libs/algos.pyx
+      ninja: build stopped: subcommand failed.
+      [end of output]
+  
+  note: This error originates from a subprocess, and is likely not a problem with pip.
+error: metadata-generation-failed
+
+× Encountered error while generating package metadata.
+╰─> See above for output.
+
+note: This is an issue with the package mentioned above, not pip.
+hint: See above for details.
+
+[notice] A new release of pip is available: 24.0 -> 25.1.1
+[notice] To update, run: pip install --upgrade pip
+Checking if Streamlit is installed
+Installing rich for an improved exception logging
+Using standard pip install.
+Collecting rich>=10.14.0
+  Downloading rich-14.0.0-py3-none-any.whl.metadata (18 kB)
+Collecting markdown-it-py>=2.2.0 (from rich>=10.14.0)
+  Downloading markdown_it_py-3.0.0-py3-none-any.whl.metadata (6.9 kB)
+Collecting pygments<3.0.0,>=2.13.0 (from rich>=10.14.0)
+  Downloading pygments-2.19.1-py3-none-any.whl.metadata (2.5 kB)
+Collecting mdurl~=0.1 (from markdown-it-py>=2.2.0->rich>=10.14.0)
+  Downloading mdurl-0.1.2-py3-none-any.whl.metadata (1.6 kB)
+Downloading rich-14.0.0-py3-none-any.whl (243 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 243.2/243.2 kB 13.6 MB/s eta 0:00:00[2025-06-18 15:23:35.499717] 
+Downloading markdown_it_py-3.0.0-py3-none-any.whl (87 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 87.5/87.5 kB 152.0 MB/s eta 0:00:00[2025-06-18 15:23:35.518953] 
+Downloading pygments-2.19.1-py3-none-any.whl (1.2 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.2/1.2 MB 70.1 MB/s eta 0:00:00[2025-06-18 15:23:35.570052] 
+Downloading mdurl-0.1.2-py3-none-any.whl (10.0 kB)
+Installing collected packages: pygments, mdurl, markdown-it-py, rich
+  Attempting uninstall: pygments
+    Found existing installation: Pygments 2.19.1
+    Uninstalling Pygments-2.19.1:
+      Successfully uninstalled Pygments-2.19.1
+  Attempting uninstall: mdurl
+    Found existing installation: mdurl 0.1.2
+    Uninstalling mdurl-0.1.2:
+      Successfully uninstalled mdurl-0.1.2
+  Attempting uninstall: markdown-it-py
+    Found existing installation: markdown-it-py 3.0.0
+    Uninstalling markdown-it-py-3.0.0:
+      Successfully uninstalled markdown-it-py-3.0.0
+  Attempting uninstall: rich
+    Found existing installation: rich 14.0.0
+    Uninstalling rich-14.0.0:
+      Successfully uninstalled rich-14.0.0
+Successfully installed markdown-it-py-3.0.0 mdurl-0.1.2 pygments-2.19.1 rich-14.0.0
+
+[notice] A new release of pip is available: 24.0 -> 25.1.1
+[notice] To update, run: pip install --upgrade pip
+
+────────────────────────────────────────────────────────────────────────────────────────
+
+[15:23:39] ❗️ installer returned a non-zero exit code
+[15:23:39] ❗️ Error during processing dependencies! Please fix the error and push an update, or try restarting the app.
