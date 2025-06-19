@@ -1,7 +1,9 @@
 # Payslip Management System
 
 [![Security](https://img.shields.io/badge/security-enabled-brightgreen)](SECURITY.md)
-[![CodeQL](https://github.com/yourusername/payslip-manager/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/yourusername/payslip-manager/actions/workflows/codeql-analysis.yml)
+[![CodeQL](https://github.com/cj4c0b1/payslip-manager/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/cj4c0b1/payslip-manager/actions/workflows/codeql-analysis.yml)
+[![Streamlit Cloud](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://payslip-manager.streamlit.app/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 A Streamlit-based application for managing and analyzing employee payslips in PDF format. The system allows users to upload, store, and visualize payslip data with various reporting capabilities.
 
@@ -41,63 +43,137 @@ This project implements several security measures to protect your data:
 - **Private Vulnerability Reporting**: Secure channel for reporting security issues
 - **Regular Updates**: Dependencies are automatically kept up-to-date
 
-## Installation
+## 🚀 Quick Start
 
-1. Clone the repository:
+### Option 1: Use the Live Demo
+
+Access the live application at: [payslip-manager.streamlit.app](https://payslip-manager.streamlit.app/)
+
+### Option 2: Local Development
+
+1. **Clone the repository**:
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/cj4c0b1/payslip-manager.git
    cd payslip-manager
    ```
 
-2. Create and activate a virtual environment (recommended):
+2. **Set up the environment**:
    ```bash
-   python -m venv venv
-   source venv/bin/activate  # On Windows: .\venv\Scripts\activate
-   ```
-
-3. Install the required packages:
-   ```bash
+   # Create and activate virtual environment
+   python -m venv .venv
+   source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+   
+   # Install dependencies
    pip install -r requirements.txt
-   ```
-
-4. For better performance, install the Watchdog module:
-   ```bash
-   xcode-select --install  # Required for Watchdog on macOS
+   
+   # For better performance
    pip install watchdog
    ```
 
-## Usage
+3. **Initialize the database**:
+   ```bash
+   mkdir -p data uploads logs
+   python -c "from src.database import init_db; init_db()"
+   ```
 
-1. Start the Streamlit application:
+## 🚀 Deployment
+
+### Streamlit Cloud
+
+The application is pre-configured for deployment to Streamlit Cloud:
+
+1. Fork this repository
+2. Go to [Streamlit Cloud](https://share.streamlit.io/)
+3. Click "New app" and select your forked repository
+4. Set the main file to `streamlit_app.py`
+5. Configure your secrets in the Streamlit Cloud settings
+6. Click "Deploy!"
+
+### Environment Variables
+
+For local development, create a `.env` file with:
+
+```
+DATABASE_URL=sqlite:///data/payslips.db
+SECRET_KEY=your-secret-key
+# Optional email settings
+SMTP_SERVER=smtp.example.com
+SMTP_PORT=587
+SMTP_USERNAME=your-email@example.com
+SMTP_PASSWORD=your-email-password
+```
+
+## 🖥️ Usage
+
+### Local Development
+
+1. **Start the application**:
    ```bash
    streamlit run main.py
    ```
 
-2. Open your web browser and navigate to `http://localhost:8501`
+2. Open your browser to [http://localhost:8501](http://localhost:8501)
 
-3. Use the sidebar to navigate between different sections:
-   - **Upload**: Upload and process new payslip PDFs
-   - **View**: Browse and filter existing payslips
-   - **Reports**: View analytics and export data
+3. **Login**:
+   - Use the credentials configured in your `.streamlit/secrets.toml` file
+   - For local development, you can set up your admin credentials in the secrets file
+
+### Key Features
+
+- **📤 Upload**: Process new payslip PDFs with automatic data extraction
+- **👁️ View**: Browse and search payslips with advanced filtering
+- **📊 Reports**: Generate analytics and export data in multiple formats
+- **🔄 Currency**: Automatic BRL to EUR conversion with historical rates
+- **🔐 Security**: Role-based access control and audit logging
 
 ### Currency Conversion
 
-Payslips in BRL are automatically converted to EUR using the exchange rate from the payslip's reference date. The converted amounts are displayed alongside the original values.
+- Automatic BRL to EUR conversion using historical exchange rates
+- Rate information stored with each payslip
+- Manual refresh option available
+- Toggle between original and converted amounts
 
-#### How It Works:
-1. When a payslip is uploaded, the system:
-   - Identifies the reference date
-   - Fetches the historical exchange rate for that date
-   - Stores the rate and converted amounts in the database
+## 🛠️ Development
 
-2. The exchange rate information is displayed in the payslip details view
+### Project Structure
 
-3. Both original (BRL) and converted (EUR) amounts are shown in all relevant views
+```
+payslip-manager/
+├── .streamlit/           # Streamlit configuration
+│   ├── config.toml      # App settings
+│   └── secrets.toml     # Sensitive data (gitignored)
+├── data/                # Database and uploads
+├── src/                 # Source code
+│   ├── database.py      # Database setup and models
+│   └── ...
+├── main.py             # Main application
+└── requirements.txt     # Dependencies
+```
 
-#### Manual Refresh
-To refresh exchange rates for existing payslips:
-1. Go to the payslip details
-2. Click the "Refresh Exchange Rate" button
+### Running Tests
+
+```bash
+# Install test dependencies
+pip install -r requirements-test.txt
+
+# Run tests
+pytest
+```
+
+### Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+### Code Style
+
+- Follow [PEP 8](https://www.python.org/dev/peps/pep-0008/)
+- Type hints for all function parameters and return values
+- Docstrings for all public functions and classes
+- Meaningful commit messages
 3. The system will fetch the latest rate for the payslip's reference date
 
 > **Note**: Exchange rates are cached for 24 hours to reduce API calls. Manual refresh overrides the cache for specific payslips.
