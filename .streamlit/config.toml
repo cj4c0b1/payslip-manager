@@ -1,6 +1,48 @@
 [server]
+# Enable headless mode (required for Streamlit Cloud)
 headless = true
 port = 8501
+# Increase max upload size to 200MB
+maxUploadSize = 200
+# Enable CORS for all domains
+enableCORS = true
+# Enable XSRF protection
+enableXsrfProtection = true
+# File watcher type - use 'auto' for best performance
+fileWatcherType = "auto"
 
 [browser]
-serverAddress = "localhost"
+# Set server address to 0.0.0.0 for cloud deployment
+serverAddress = "0.0.0.0"
+# Enable websocket compression
+serverPort = 8501
+
+[runner]
+# Run in headless mode
+headless = true
+
+[client]
+# Enable websocket compression
+websocketCompression = true
+
+[logger]
+# Set log level to warning to reduce noise
+level = "warning"
+
+[scheduler]
+# Disable the scheduler as it's not needed for this app
+enabled = false
+
+[ui]
+# Disable the hamburger menu in the top right corner
+hideTopBar = true
+# Set the theme to light
+base = "light"
+
+[theme]
+# Set the primary color to match your app's theme
+primaryColor = "#4f8bf9"
+backgroundColor = "#ffffff"
+secondaryBackgroundColor = "#f0f2f6"
+textColor = "#31333f"
+font = "sans serif"
