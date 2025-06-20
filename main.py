@@ -1329,7 +1329,7 @@ def _get_pdf_path(payslip):
 
 def _display_pdf_viewer(pdf_path, file_name):
     """
-    Display a PDF in a Streamlit viewer with download option.
+    Display a PDF in a Streamlit viewer with preview and download option.
     
     Args:
         pdf_path: Path to the PDF file
@@ -1344,29 +1344,47 @@ def _display_pdf_viewer(pdf_path, file_name):
         with open(pdf_path, "rb") as pdf_file:
             pdf_bytes = pdf_file.read()
             
-            # Create a base64 encoded string for the iframe
-            b64 = base64.b64encode(pdf_bytes).decode('utf-8')
+            # Convert to base64 for embedding
+            base64_pdf = base64.b64encode(pdf_bytes).decode('utf-8')
             
-            # Display PDF in an iframe
-            pdf_display = f'''
-            <iframe src="data:application/pdf;base64,{b64}" 
-                    width="100%" 
-                    height="800" 
-                    type="application/pdf"
-                    style="border: 1px solid #ddd; border-radius: 4px;">
-            </iframe>
-            '''
-            st.markdown(pdf_display, unsafe_allow_html=True)
+            # Display the PDF section header
+            st.markdown("### PDF Document")
+            st.markdown("---")
             
-            # Create a download button with the file data
-            st.download_button(
-                label="⬇️ Download Original PDF",
-                data=pdf_bytes,
-                file_name=file_name,
-                mime="application/pdf",
-                key=f"download_original_{pdf_path.name}",
-                on_click=None  # Removed "ignore" string which was causing TypeError
-            )
+            # Create a container for the PDF preview
+            with st.container():
+                # Display PDF preview using iframe
+                pdf_display = f'''
+                <div style="border: 1px solid #e0e0e0; border-radius: 4px; padding: 10px; margin-bottom: 20px;">
+                    <iframe 
+                        src="data:application/pdf;base64,{base64_pdf}#toolbar=0&navpanes=0"
+                        width="100%" 
+                        height="600px"
+                        style="border: none;"
+                    >
+                        This browser does not support PDFs. Please download the PDF to view it.
+                    </iframe>
+                </div>
+                '''
+                st.markdown(pdf_display, unsafe_allow_html=True)
+                
+                # Create a download button with the file data
+                st.download_button(
+                    label="⬇️ Download PDF",
+                    data=pdf_bytes,
+                    file_name=file_name,
+                    mime="application/pdf",
+                    key=f"download_original_{pdf_path.name}",
+                    on_click=None,
+                    use_container_width=True,
+                    type="primary"
+                )
+                
+                # Show file information
+                file_size = len(pdf_bytes) / (1024 * 1024)  # Convert to MB
+                st.caption(f"File: {file_name} | Size: {file_size:.2f} MB")
+            
+            return True
             
     except Exception as e:
         st.error(f"Error loading PDF file: {str(e)}")
