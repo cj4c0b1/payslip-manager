@@ -1,4 +1,4 @@
-name: "CodeQL - Python Analysis"
+name: "CodeQL"
 
 on:
   push:
@@ -8,29 +8,26 @@ on:
   schedule:
     - cron: '0 0 * * 0' # Weekly on Sunday at midnight
 
+permissions:
+  contents: read
+  security-events: write
+
 jobs:
   analyze:
-    name: Analyze Python
+    name: Analyze
     runs-on: ubuntu-latest
     
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
-
-    - name: Set up Python
-      uses: actions/setup-python@v4
       with:
-        python-version: '3.10'
-
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        fetch-depth: 0
 
     - name: Initialize CodeQL
-      uses: github/codeql-action/init@v3
+      uses: github/codeql-action/init@v2
       with:
         languages: python
-        
+        tools: latest
+
     - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v3
+      uses: github/codeql-action/analyze@v2
