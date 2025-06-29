@@ -1,74 +1,36 @@
-name: "CodeQL"
+name: "CodeQL - Python Analysis"
 
 on:
   push:
-    branches: [ "master", "main", "develop" ]
+    branches: [ "main", "develop" ]
   pull_request:
-    branches: [ "master", "main", "develop" ]
+    branches: [ "main", "develop" ]
   schedule:
     - cron: '0 0 * * 0' # Weekly on Sunday at midnight
-  workflow_dispatch:
-
-# Cancel in-progress runs for the same branch or PR
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
 
 jobs:
   analyze:
-    name: Analyze
+    name: Analyze Python
     runs-on: ubuntu-latest
-    permissions:
-      actions: read
-      contents: read
-      security-events: write
-
-    strategy:
-      fail-fast: false
-      matrix:
-        language: [ 'python' ]  # Only analyze Python code
-
+    
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
-      with:
-        fetch-depth: 2
-
-    - name: Initialize CodeQL
-      uses: github/codeql-action/init@v3
-      with:
-        languages: ${{ matrix.language }}
-        # Use default queries only to avoid advanced configuration conflicts
-        # We'll add security-extended queries back after we confirm the basic setup works
 
     - name: Set up Python
-      if: matrix.language == 'python'
       uses: actions/setup-python@v4
       with:
         python-version: '3.10'
 
-    - name: Install Python dependencies
-      if: matrix.language == 'python'
+    - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
-    - name: Autobuild
-      uses: github/codeql-action/autobuild@v3
-
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v3
+      with:
+        languages: python
+        
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v3
-      with:
-        category: "/language:${{matrix.language}}"
-        upload: true
-
-  # Add a job to check for new CodeQL alerts
-  check-new-alerts:
-    name: Check for new CodeQL alerts
-    runs-on: ubuntu-latest
-    needs: analyze
-    steps:
-      - name: Check for new CodeQL alerts
-        uses: github/codeql-action/check-new-alerts@v3
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
