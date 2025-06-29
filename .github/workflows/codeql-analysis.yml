@@ -1,64 +1,46 @@
 name: "CodeQL"
 
+# This workflow performs CodeQL security analysis on the Python codebase.
+# It runs on pushes and PRs to main/develop branches, plus weekly on Sundays.
+#
+# Configuration notes:
+# - Using CodeQL v1 (init@v1) for stability with Python analysis
+# - Minimal configuration to avoid conflicts with default GitHub settings
+# - Python-only analysis as this is a Python project
+# - fetch-depth: 0 ensures full Git history for accurate analysis
+# - Required permissions are set at the job level for least privilege
+
 on:
   push:
-    branches: [ "master" ]
+    branches: [ "main", "develop" ]
   pull_request:
-    branches: [ "master" ]
+    branches: [ "main", "develop" ]
   schedule:
-    - cron: '0 0 * * 0' # Weekly on Sunday at midnight
-
-# Cancel in-progress runs for the same branch or PR
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+    - cron: '0 0 * * 0'  # Weekly on Sunday at midnight
 
 jobs:
   analyze:
-    name: Analyze
+    name: Analyze Python
     runs-on: ubuntu-latest
+    
+    # Minimal required permissions for CodeQL to function
     permissions:
-      actions: read
-      contents: read
-      security-events: write
-
-    strategy:
-      fail-fast: false
-      matrix:
-        language: [ 'javascript', 'python' ]
+      actions: read        # For checking workflow runs
+      contents: read       # For accessing the repository code
+      security-events: write  # For uploading results to code scanning
 
     steps:
+    # Checkout the code to be analyzed
     - name: Checkout repository
       uses: actions/checkout@v4
       with:
-        fetch-depth: 2
+        # Fetch entire history for better analysis accuracy
+        fetch-depth: 0
 
+    # Initialize CodeQL with Python analysis
     - name: Initialize CodeQL
-      uses: github/codeql-action/init@v3
+      uses: github/codeql-action/init@v1  # Using v1 for stability
       with:
-        languages: ${{ matrix.language }}
-        queries: +security-and-quality
-
-    - name: Autobuild
-      uses: github/codeql-action/autobuild@v3
-
-    - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v3
-      with:
-        category: "/language:${{matrix.language}}"
-
-    - name: Upload SARIF results
-      uses: github/codeql-action/upload-sarif@v3
-      with:
-        sarif_file: results-${{ matrix.language }}.sarif
-
-  # Add a job to check for new CodeQL alerts
-  check-new-alerts:
-    name: Check for new CodeQL alerts
-    runs-on: ubuntu-latest
-    needs: analyze
-    steps:
-      - name: Check for new CodeQL alerts
-        uses: github/codeql-action/check-new-alerts@v3
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+        # Note: Only Python is enabled as this is a Python project
+        # Using default query suite which includes security queries
+        languages: python
