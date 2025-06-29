@@ -2,11 +2,12 @@ name: "CodeQL"
 
 on:
   push:
-    branches: [ "master" ]
+    branches: [ "master", "main", "develop" ]
   pull_request:
-    branches: [ "master" ]
+    branches: [ "master", "main", "develop" ]
   schedule:
     - cron: '0 0 * * 0' # Weekly on Sunday at midnight
+  workflow_dispatch:
 
 # Cancel in-progress runs for the same branch or PR
 concurrency:
@@ -37,7 +38,22 @@ jobs:
       uses: github/codeql-action/init@v3
       with:
         languages: ${{ matrix.language }}
-        queries: +security-and-quality
+        # Use security-extended queries which includes security-and-quality
+        queries: security-extended
+        # Disable the default setup to avoid conflicts
+        setup-python-dependencies: false
+
+    - name: Set up Python
+      if: matrix.language == 'python'
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: Install Python dependencies
+      if: matrix.language == 'python'
+      run: |
+        python -m pip install --upgrade pip
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
     - name: Autobuild
       uses: github/codeql-action/autobuild@v3
@@ -46,11 +62,7 @@ jobs:
       uses: github/codeql-action/analyze@v3
       with:
         category: "/language:${{matrix.language}}"
-
-    - name: Upload SARIF results
-      uses: github/codeql-action/upload-sarif@v3
-      with:
-        sarif_file: results-${{ matrix.language }}.sarif
+        upload: true
 
   # Add a job to check for new CodeQL alerts
   check-new-alerts:
