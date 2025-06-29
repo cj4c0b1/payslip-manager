@@ -40,8 +40,6 @@ jobs:
         languages: ${{ matrix.language }}
         # Use security-extended queries which includes security-and-quality
         queries: security-extended
-        # Disable the default setup to avoid conflicts
-        setup-python-dependencies: false
 
     - name: Set up Python
       if: matrix.language == 'python'
