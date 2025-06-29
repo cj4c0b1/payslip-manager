@@ -1,5 +1,15 @@
 name: "CodeQL"
 
+# This workflow performs CodeQL security analysis on the Python codebase.
+# It runs on pushes and PRs to main/develop branches, plus weekly on Sundays.
+#
+# Configuration notes:
+# - Using CodeQL v1 (init@v1) for stability with Python analysis
+# - Minimal configuration to avoid conflicts with default GitHub settings
+# - Python-only analysis as this is a Python project
+# - fetch-depth: 0 ensures full Git history for accurate analysis
+# - Required permissions are set at the job level for least privilege
+
 on:
   push:
     branches: [ "main", "develop" ]
@@ -12,18 +22,25 @@ jobs:
   analyze:
     name: Analyze Python
     runs-on: ubuntu-latest
+    
+    # Minimal required permissions for CodeQL to function
     permissions:
-      actions: read
-      contents: read
-      security-events: write
+      actions: read        # For checking workflow runs
+      contents: read       # For accessing the repository code
+      security-events: write  # For uploading results to code scanning
 
     steps:
+    # Checkout the code to be analyzed
     - name: Checkout repository
       uses: actions/checkout@v4
       with:
+        # Fetch entire history for better analysis accuracy
         fetch-depth: 0
 
+    # Initialize CodeQL with Python analysis
     - name: Initialize CodeQL
-      uses: github/codeql-action/init@v1
+      uses: github/codeql-action/init@v1  # Using v1 for stability
       with:
+        # Note: Only Python is enabled as this is a Python project
+        # Using default query suite which includes security queries
         languages: python
