@@ -38,8 +38,8 @@ jobs:
       uses: github/codeql-action/init@v3
       with:
         languages: ${{ matrix.language }}
-        # Use security-extended queries which includes security-and-quality
-        queries: security-extended
+        # Use default queries only to avoid advanced configuration conflicts
+        # We'll add security-extended queries back after we confirm the basic setup works
 
     - name: Set up Python
       if: matrix.language == 'python'
