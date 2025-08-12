@@ -32,7 +32,7 @@ jobs:
     steps:
     # Checkout the code to be analyzed
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         # Fetch entire history for better analysis accuracy
         fetch-depth: 0
