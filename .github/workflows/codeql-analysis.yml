@@ -39,7 +39,7 @@ jobs:
 
     # Initialize CodeQL with Python analysis
     - name: Initialize CodeQL
-      uses: github/codeql-action/init@v1  # Using v1 for stability
+      uses: github/codeql-action/init@v4  # Using v1 for stability
       with:
         # Note: Only Python is enabled as this is a Python project
         # Using default query suite which includes security queries
